@@ -2,7 +2,6 @@ Imports System
 Imports System.Configuration
 Imports System.Data
 Imports System.Data.SqlClient
-Imports RIBESFrameWork
 Imports System.EnterpriseServices
 Imports System.Runtime.InteropServices
 Imports log4net
@@ -23,7 +22,6 @@ Namespace COMPlusOPENgovProvvedimenti
         'RIBESFrameWork.Session (sessione del FrameWork
         '*******************************************************************
         Public m_objHashTable As Hashtable
-        Protected objDBManager As DBManager
         Dim objDBOPENgovProvvedimentiSelect As DBOPENgovProvvedimentiSelect
         Dim objDBOPENgovProvvedimentiUpdate As COMPlusOPENgovProvvedimenti.DBOPENgovProvvedimentiUpdate
 

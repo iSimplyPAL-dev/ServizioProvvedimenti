@@ -3,7 +3,6 @@ Imports System.Configuration
 Imports System.Data
 Imports System.Data.SqlClient
 Imports System.EnterpriseServices
-Imports RIBESFrameWork
 Imports log4net
 Imports ComPlusInterface
 Imports Utility
@@ -14,7 +13,6 @@ Namespace COMPlusOPENgovProvvedimenti
     ''' </summary>
     Public Class DBIci
         'Inherits ServicedComponent
-        Private objDBManager As DBManager
         Protected objUtility As New MotoreProvUtility
         Protected objCostanti As New COSTANTValue.CostantiProv
         Dim myUtility As New MotoreProvUtility
@@ -37,7 +35,7 @@ Namespace COMPlusOPENgovProvvedimenti
             Dim myDataSet As New DataSet
             Try
                 Using ctx As New DBModel(MotoreProvUtility.DBType_SQL, myStringConnection)
-                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure,"prc_GetVersamentiFase2", "IDENTE", "IDCONTRIBUENTE", "ANNO", "TRIBUTO", "CODCARTELLA")
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_GetVersamentiFase2", "IDENTE", "IDCONTRIBUENTE", "ANNO", "TRIBUTO", "CODCARTELLA")
                     myDataSet = ctx.GetDataSet(sSQL, "VERSAMENTI", ctx.GetParam("IDENTE", IdEnte) _
                         , ctx.GetParam("IDCONTRIBUENTE", IdContribuente) _
                         , ctx.GetParam("ANNO", Anno) _
@@ -306,151 +304,104 @@ Namespace COMPlusOPENgovProvvedimenti
         <AutoComplete()>
         Public Function getDATI_TASK_REPOSITORY_CALCOLO_ICI(StringConnectionICI As String, IdEnte As String, ByVal objHashTable As Hashtable) As DataSet
             Try
-                Dim strSQL As String = ""
-                Dim objDa As SqlDataAdapter
-                objUtility = New MotoreProvUtility
-                Dim objDSTestata As DataSet
+                Dim _oDbManager As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionICI)
+                Dim sSQL As String = ""
+                Dim objDR As New DataSet
                 Dim strTipoElaborazione As String
                 Dim strUTENTE As String
 
                 strTipoElaborazione = objUtility.CToStr(objHashTable("TIPO_ELABORAZIONE"))
                 strUTENTE = objUtility.CToStr(objHashTable("USER"))
 
-                'strSQL = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED" & vbCrLf
-                strSQL += " SELECT * FROM TP_TASK_REPOSITORY" & vbCrLf
-                strSQL += " WHERE TIPO_ELABORAZIONE=" & objUtility.CStrToDB(strTipoElaborazione) & vbCrLf
-                'strSQL += " AND OPERATORE=" & objUtility.CStrToDB(strUTENTE) & vbCrLf
-                strSQL += " AND COD_ENTE='" & IdEnte & "'"
-                strSQL += " ORDER BY DATA_ELABORAZIONE DESC"
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionICI)
+                Using ctx As DBModel = _oDbManager
+                    sSQL += " SELECT * FROM TP_TASK_REPOSITORY"
+                    sSQL += " WHERE TIPO_ELABORAZIONE=" & objUtility.CStrToDB(strTipoElaborazione)
+                    sSQL += " AND COD_ENTE='" & IdEnte & "'"
+                    sSQL += " ORDER BY DATA_ELABORAZIONE DESC"
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDR = ctx.GetDataSet(sSQL, "TASK_REPOSITORY_CALCOLO_ICI")
 
-                objDSTestata = New DataSet
-
-                objDa = objDBManager.GetPrivateDataAdapter(strSQL)
-
-                objDa.Fill(objDSTestata, "TASK_REPOSITORY_CALCOLO_ICI")
-
-                objDa.Dispose()
-
-                getDATI_TASK_REPOSITORY_CALCOLO_ICI = objDSTestata
+                    ctx.Dispose()
+                End Using
+                getDATI_TASK_REPOSITORY_CALCOLO_ICI = objDR
 
                 Return getDATI_TASK_REPOSITORY_CALCOLO_ICI
-
             Catch ex As Exception
                 Log.Debug("Function::getDATI_TASK_REPOSITORY_CALCOLO_ICI::COMPlusService:: " & ex.Message)
                 Throw New Exception("Function::getDATI_TASK_REPOSITORY_CALCOLO_ICI::COMPlusService:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
 
         Public Function GetListTipoPossesso(StringConnectionICI As String, ByVal objHashTable As Hashtable) As DataSet
             Try
-                Dim strSQL As String = ""
-                Dim objDS As DataSet
+                Dim sSQL As String = ""
+                Dim objDR As New DataSet
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionICI)
+                    '*** 20140509 - TASI ***
+                    sSQL = "SELECT ID AS TIPOPOSSESSO,DESCRIZIONE"
+                    sSQL += " FROM TBLTIPOUTILIZZO"
+                    sSQL += " ORDER BY DESCRIZIONE"
+                    '*** ***
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDR = ctx.GetDataSet(sSQL, "TBL")
 
-                '*** 20140509 - TASI ***
-                'strSQL = "SELECT TIPOPOSSESSO,DESCRIZIONE FROM TBLPOSSESSO ORDER BY TIPOPOSSESSO"
-                strSQL = "SELECT ID AS TIPOPOSSESSO,DESCRIZIONE"
-                strSQL += " FROM TBLTIPOUTILIZZO"
-                strSQL += " ORDER BY DESCRIZIONE"
-                '*** ***
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionICI)
-                objDS = objDBManager.GetPrivateDataSet(strSQL)
-                Return objDS
+                    ctx.Dispose()
+                End Using
+                Return objDR
             Catch ex As Exception
                 Throw New Exception("Function::GetTipoPossesso::COMPlusService:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
 
         Public Function GetListCategorie(StringConnectionICI As String, ByVal objHashTable As Hashtable) As DataSet
-
             Try
+                Dim sSQL As String = ""
+                Dim objDR As New DataSet
+                sSQL = "SELECT CATEGORIACATASTALE FROM TBLCATEGORIACATASTALE"
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionICI)
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDR = ctx.GetDataSet(sSQL, "TBL")
 
-                Dim strSQL As String = ""
-
-                Dim objDS As DataSet
-
-                strSQL = "SELECT CategoriaCatastale FROM TblCategoriaCatastale"
-
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionICI)
-
-                objDS = objDBManager.GetPrivateDataSet(strSQL)
-
-                Return objDS
-
+                    ctx.Dispose()
+                End Using
+                Return objDR
             Catch ex As Exception
                 Throw New Exception("Function::GetListCategorie::COMPlusService:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
             End Try
         End Function
 
         Public Function GetListClasse(StringConnectionICI As String, ByVal objHashTable As Hashtable) As DataSet
             Try
+                Dim sSQL As String = ""
+                Dim objDR As New DataSet
+                sSQL = "SELECT CLASSE,CLASSE + ' - ' + DESCRIZIONE AS DESCR FROM TblClasse"
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionICI)
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDR = ctx.GetDataSet(sSQL, "TBL")
 
-                Dim strSQL As String = ""
-
-                Dim objDS As DataSet
-
-                strSQL = "SELECT CLASSE,CLASSE + ' - ' + DESCRIZIONE AS DESCR FROM TblClasse"
-
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionICI)
-
-                objDS = objDBManager.GetPrivateDataSet(strSQL)
-
-                Return objDS
-
+                    ctx.Dispose()
+                End Using
+                Return objDR
             Catch ex As Exception
                 Throw New Exception("Function::GetListClasse::COMPlusService:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
             End Try
         End Function
 
         Public Function GetListTipoRendita(StringConnectionICI As String, ByVal objHashTable As Hashtable) As DataSet
             Try
-                Dim strSQL As String = ""
+                Dim sSQL As String = ""
+                Dim objDR As New DataSet
+                sSQL = "SELECT COD_RENDITA, SIGLA + ' - ' + DESCRIZIONE AS DESCR FROM TIPO_RENDITA ORDER BY SIGLA"
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionICI)
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDR = ctx.GetDataSet(sSQL, "TBL")
 
-                Dim objDS As DataSet
-
-                strSQL = "SELECT COD_RENDITA, SIGLA + ' - ' + DESCRIZIONE AS DESCR FROM TIPO_RENDITA ORDER BY SIGLA"
-
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionICI)
-
-                objDS = objDBManager.GetPrivateDataSet(strSQL)
-
-                Return objDS
+                    ctx.Dispose()
+                End Using
+                Return objDR
 
             Catch ex As Exception
                 Throw New Exception("Function::GetListTipoRendita::COMPlusService:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
             End Try
         End Function
     End Class

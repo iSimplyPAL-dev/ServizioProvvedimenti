@@ -4,7 +4,6 @@ Imports System.Data
 Imports System.Data.SqlClient
 Imports System.EnterpriseServices
 Imports System.IO
-Imports RIBESFrameWork
 'Imports ImexInterface
 Imports System.ComponentModel
 Imports System.Globalization
@@ -21,7 +20,6 @@ Namespace COMPlusOPENgovProvvedimenti
     ''' </summary>
     Public Class DBOPENgovProvvedimentiUpdate
         'Inherits ServicedComponent
-        Private objDBManager As DBManager
         Protected objUtility As New MotoreProvUtility
         Protected objdbIci As DBIci
 
@@ -31,58 +29,58 @@ Namespace COMPlusOPENgovProvvedimenti
 
         End Sub
 #Region "SALVATAGGIO DATI GESTIONE ATTI"
-        <AutoComplete()> Public Function SetDATE_PROVVEDIMENTI(StringConnectionProvv As String, ByVal objDSDICHIARATO_ICI_PROVVEDIMENTO As DataSet, ByVal objHashTable As Hashtable) As Boolean
+        '<AutoComplete()> Public Function SetDATE_PROVVEDIMENTI(StringConnectionProvv As String, ByVal objDSDICHIARATO_ICI_PROVVEDIMENTO As DataSet, ByVal objHashTable As Hashtable) As Boolean
 
-            Dim intRetVal As Integer
-            Dim strSQL As String
+        '    Dim intRetVal As Integer
+        '    Dim strSQL As String
 
-            objUtility = New MotoreProvUtility
+        '    objUtility = New MotoreProvUtility
 
-            SetDATE_PROVVEDIMENTI = False
+        '    SetDATE_PROVVEDIMENTI = False
 
-            objDBManager = New DBManager
+        '    objDBManager = New DBManager
 
-            objDBManager.Initialize(StringConnectionProvv)
+        '    objDBManager.Initialize(StringConnectionProvv)
 
-            '*********************************************************************************
-            'UPDATE PROVVEDIMENTI
-            '*********************************************************************************
+        '    '*********************************************************************************
+        '    'UPDATE PROVVEDIMENTI
+        '    '*********************************************************************************
 
-            strSQL = "UPDATE PROVVEDIMENTI SET "
-            strSQL += "DATA_CONSEGNA_AVVISO =" & objUtility.CStrToDB(objHashTable("DATACONSEGNAAVVISO")) & vbCrLf
-            strSQL += ",DATA_NOTIFICA_AVVISO=" & objUtility.CStrToDB(objHashTable("DATANOTIFICAAVVISO")) & vbCrLf
-            strSQL += ",DATA_IRREPERIBILE=" & objUtility.CStrToDB(objHashTable("DATAIRREPERIBILE"))
-            strSQL += ",DATA_PERVENUTO_IL=" & objUtility.CStrToDB(objHashTable("DATAPERVENUTOIL")) & vbCrLf
+        '    strSQL = "UPDATE PROVVEDIMENTI SET "
+        '    strSQL += "DATA_CONSEGNA_AVVISO =" & objUtility.CStrToDB(objHashTable("DATACONSEGNAAVVISO")) & vbCrLf
+        '    strSQL += ",DATA_NOTIFICA_AVVISO=" & objUtility.CStrToDB(objHashTable("DATANOTIFICAAVVISO")) & vbCrLf
+        '    strSQL += ",DATA_IRREPERIBILE=" & objUtility.CStrToDB(objHashTable("DATAIRREPERIBILE"))
+        '    strSQL += ",DATA_PERVENUTO_IL=" & objUtility.CStrToDB(objHashTable("DATAPERVENUTOIL")) & vbCrLf
 
-            '**** Aggiunta 15/01/2009
-            strSQL += ",NOTE_GENERALI_ATTO=" & objUtility.CStrToDB(objHashTable("NOTEGENERALIATTO")) & vbCrLf
-            '**** /Aggiunta 15/01/2009
+        '    '**** Aggiunta 15/01/2009
+        '    strSQL += ",NOTE_GENERALI_ATTO=" & objUtility.CStrToDB(objHashTable("NOTEGENERALIATTO")) & vbCrLf
+        '    '**** /Aggiunta 15/01/2009
 
-            strSQL += "WHERE" & vbCrLf
-            strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
-            Log.Debug("SetDateProvv->" + strSQL)
-            intRetVal = objDBManager.Execute(strSQL)
+        '    strSQL += "WHERE" & vbCrLf
+        '    strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
+        '    Log.Debug("SetDateProvv->" + strSQL)
+        '    intRetVal = objDBManager.Execute(strSQL)
 
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
+        '    If Not IsNothing(objDBManager) Then
+        '        objDBManager.Kill()
+        '        objDBManager.Dispose()
 
-            End If
-
-
-            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetDATE_PROVVEDIMENTI::DBOPENgovProvvedimentiUpdate")
-            End If
-
-            'Dim objDBOPENgovICIUpdate As New COMPlusOPENgovProvvedimenti.DBICIUpdate
-            'SetDATE_PROVVEDIMENTI = objDBOPENgovICIUpdate.setIDQUESTIONARIO_TBLTestata(objDSDICHIARATO_ICI_PROVVEDIMENTO, objHashTable)
-            SetDATE_PROVVEDIMENTI = True
-
-            Return SetDATE_PROVVEDIMENTI
+        '    End If
 
 
+        '    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetDATE_PROVVEDIMENTI::DBOPENgovProvvedimentiUpdate")
+        '    End If
 
-        End Function
+        '    'Dim objDBOPENgovICIUpdate As New COMPlusOPENgovProvvedimenti.DBICIUpdate
+        '    'SetDATE_PROVVEDIMENTI = objDBOPENgovICIUpdate.setIDQUESTIONARIO_TBLTestata(objDSDICHIARATO_ICI_PROVVEDIMENTO, objHashTable)
+        '    SetDATE_PROVVEDIMENTI = True
+
+        '    Return SetDATE_PROVVEDIMENTI
+
+
+
+        'End Function
         <AutoComplete()>
         Public Function SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA(StringConnectionProvv As String, ByVal objHashTable As Hashtable, ByRef NUMERO_ATTO As String) As Boolean
             Dim intRetVal As Integer
@@ -95,48 +93,35 @@ Namespace COMPlusOPENgovProvvedimenti
 
             SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA = False
 
-            objDBManager = New DBManager
+            Try
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    '*** 20112008 Fabi modifica per assegnazione del numero_atto
+                    '*** calcolare il numero_atto solo se il campo non è ancora valorizzato
+                    If NUMERO_ATTO = "-1" Then
+                        'Reperisco il numero atto da TblNumeroAtto
+                        NUMERO_ATTO = objDBOPENgovProvvedimentiSelect.getNewNumeroAtto(StringConnectionProvv, objHashTable)
+                    End If
 
-            objDBManager.Initialize(StringConnectionProvv)
-
-            '*********************************************************************************
-            'UPDATE PROVVEDIMENTI
-            '*********************************************************************************
-            'If NUMERO_ATTO <> "-1" Then
-            '*** 20112008 Fabi modifica per assegnazione del numero_atto
-            '*** calcolare il numero_atto solo se il campo non è ancora valorizzato
-            If NUMERO_ATTO = "-1" Then
-                'Reperisco il numero atto da TblNumeroAtto
-                NUMERO_ATTO = objDBOPENgovProvvedimentiSelect.getNewNumeroAtto(StringConnectionProvv, objHashTable)
-            End If
-
-            strSQL = "UPDATE PROVVEDIMENTI SET "
-            strSQL += "DATA_STAMPA =" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
-            strSQL += ",DATA_CONFERMA=" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
-            If NUMERO_ATTO <> "-1" Then
-                strSQL += ",NUMERO_ATTO=" & objUtility.CStrToDB(NUMERO_ATTO) & vbCrLf
-            End If
-            strSQL += "WHERE" & vbCrLf
-            strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
-            Log.Debug("SetProvLiqStampa->" + strSQL)
-            intRetVal = objDBManager.Execute(strSQL)
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
-
-            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA::DBOPENgovProvvedimentiUpdate")
-            End If
-            SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA = True
-
+                    strSQL = "UPDATE PROVVEDIMENTI SET "
+                    strSQL += "DATA_STAMPA =" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
+                    strSQL += ",DATA_CONFERMA=" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
+                    If NUMERO_ATTO <> "-1" Then
+                        strSQL += ",NUMERO_ATTO=" & objUtility.CStrToDB(NUMERO_ATTO) & vbCrLf
+                    End If
+                    strSQL += "WHERE" & vbCrLf
+                    strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+                If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                    Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA::DBOPENgovProvvedimentiUpdate")
+                End If
+                SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA = True
+            Catch ex As Exception
+                Log.Debug("SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA::si è verificato il seguente errore::", ex)
+                SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA = False
+            End Try
             Return SetPROVVEDIMENTOATTO_LIQUIDAZIONE_STAMPA
-
-
-
         End Function
         <AutoComplete()>
         Public Function SetPROVVEDIMENTOATTO_ANNULAMENTO_AVVISO(StringConnectionProvv As String, ByVal objHashTable As Hashtable) As Boolean
@@ -148,26 +133,14 @@ Namespace COMPlusOPENgovProvvedimenti
 
             SetPROVVEDIMENTOATTO_ANNULAMENTO_AVVISO = False
 
-            objDBManager = New DBManager
-
-            objDBManager.Initialize(StringConnectionProvv)
-
-            '*********************************************************************************
-            'UPDATE PROVVEDIMENTI
-            '*********************************************************************************
-
-            strSQL = "UPDATE PROVVEDIMENTI SET "
-            strSQL += "DATA_ANNULLAMENTO_AVVISO =" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
-            strSQL += "WHERE" & vbCrLf
-            strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
-            Log.Debug("SetAnnulloAvviso->" + strSQL)
-            intRetVal = objDBManager.Execute(strSQL)
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                strSQL = "UPDATE PROVVEDIMENTI SET "
+                strSQL += "DATA_ANNULLAMENTO_AVVISO =" & objUtility.CStrToDB(DateTime.Now.ToString("yyyyMMdd")) & vbCrLf
+                strSQL += "WHERE" & vbCrLf
+                strSQL += "ID_PROVVEDIMENTO=" & objUtility.CIdToDB(objHashTable("IDPROVVEDIMENTO"))
+                intRetVal = ctx.ExecuteNonQuery(strSQL)
+                ctx.Dispose()
+            End Using
 
             If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                 Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetPROVVEDIMENTOATTO_ANNULAMENTO_AVVISO::DBOPENgovProvvedimentiUpdate")
@@ -283,16 +256,10 @@ Namespace COMPlusOPENgovProvvedimenti
                 strSQL_UPDATE = strSQL_UPDATE & "AND" & vbCrLf
                 strSQL_UPDATE = strSQL_UPDATE & "ID_PROVVEDIMENTO= " & objUtility.CIdToDB(rowPROVVEDIMENTI("ID_PROVVEDIMENTO")) & vbCrLf
 
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionProvv)
-                Log.Debug("SetDateMAssiva->" + strSQL_UPDATE)
-                intRetVal = objDBManager.Execute(strSQL_UPDATE)
-
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL_UPDATE)
+                    ctx.Dispose()
+                End Using
 
                 If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::setDATE_PROVVEDIMENTI_MASSIVA::DBOPENgovProvvedimentiUpdate")
@@ -369,17 +336,10 @@ Namespace COMPlusOPENgovProvvedimenti
                 strSQL += " DELETE from TP_PROVVEDIMENTI_RETTIFICATI "
                 strSQL += " WHERE ID_PROVVEDIMENTO_FIGLIO=" & ID_PROVVEDIMENTO & ";"
 
-                objDBManager = New DBManager
-
-                objDBManager.Initialize(StringConnectionProvv)
-                Log.Debug("DelProvv->" + strSQL)
-                intRetVal = objDBManager.Execute(strSQL)
-
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
 
                 If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DeleteProvvedimentiLiquidazioni::DBOPENgovProvvedimentiUpdate")
@@ -934,6 +894,7 @@ Namespace COMPlusOPENgovProvvedimenti
         <AutoComplete()>
         Public Function SetValoriVoci(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable, ByRef intRetVal As Integer) As Boolean
             Dim sSQL As String
+            Dim myDataView As New DataView
             Dim strCODTRIBUTO, strCODCAPITOLO, strCODVOCE, strCODTIPOPROVVEDIMENTO, strCODCALCOLATO, strCODMISURA, strANNO_OLD, strIDTIPOVOCE As String
             Dim strID_VALORE_VOCI As String
             Dim strAnno, strValore, strMinimo, strCum, strRid, strInsUp As String
@@ -973,11 +934,6 @@ Namespace COMPlusOPENgovProvvedimenti
                 sSQL = " SELECT * FROM VALORE_VOCI"
                 sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
                 sSQL += " and ID_TIPO_VOCE=" & strIDTIPOVOCE
-
-                'If strInsUp.CompareTo("I") = 0 Then
-                'sSQL+= " and ID_VALORE_VOCE=" & objUtility.cToInt(strID_VALORE_VOCI)
-                'End If
-
                 sSQL += " and COD_TRIBUTO=" & objUtility.CStrToDB(strCODTRIBUTO)
                 sSQL += " and COD_CAPITOLO=" & objUtility.CStrToDB(strCODCAPITOLO)
                 sSQL += " and COD_VOCE=" & objUtility.CStrToDB(strCODVOCE)
@@ -1010,144 +966,110 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += " and COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strBaseRaffronto)
                 End If
 
-                objDBManager = New DBManager
-                objDBManager.Initialize(StringConnectionProvv)
-                Log.Debug("SetValori->" + sSQL)
-                Dim objDW As DataView = objDBManager.GetPrivateDataview(sSQL)
-
-                If objDW.Count > 0 Then
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA
-                    Return False
-                    Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate::VALOREVOCEPRESENTE")
-                End If
-
-                Select Case strInsUp
-
-                    Case "U"
-                        strANNO_OLD = objHashTable("ANNO_OLD")
-                        'UPDATE
-                        sSQL = "UPDATE VALORE_VOCI set "
-                        sSQL += " ANNO=" & objUtility.CStrToDB(strAnno) & " ,"
-                        sSQL += " VALORE=" & objUtility.CStrToDB(strValore) & " ,"
-                        sSQL += " MINIMO=" & objUtility.CStrToDB(strMinimo) & " ,"
-
-                        If strCum.CompareTo("False") = 0 Then
-                            sSQL += " CUMULABILE=" & objUtility.CStrToDB(0) & " ,"
-                        Else
-                            sSQL += " CUMULABILE=" & objUtility.CStrToDB(1) & " ,"
-                        End If
-                        If strRid.CompareTo("False") = 0 Then
-                            sSQL += " RIDUCIBILE=" & objUtility.CStrToDB(0) & " ,"
-                        Else
-                            sSQL += " RIDUCIBILE=" & objUtility.CStrToDB(1) & " ,"
-                        End If
-
-                        sSQL += " CALCOLATA_SU=" & objUtility.cToInt(strCalcolata) & " ,"
-                        sSQL += " CONDIZIONE=" & objUtility.CStrToDB(strCondizione) & " ,"
-                        sSQL += " PARAMETRO=" & objUtility.CStrToDB(strParametro) & " ,"
-                        sSQL += " BASE_RAFFRONTO=" & objUtility.CStrToDB(strBaseRaffronto) & " ,"
-                        sSQL += " COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strTipoInteresse) & " ,"
-
-                        sSQL += " CONDIZIONE_INTR=" & objUtility.CStrToDB(strCondizione_intr) & " ,"
-                        sSQL += " PARAMETRO_INTR=" & objUtility.CStrToDB(strParametro_intr) & " ,"
-                        sSQL += " BASE_RAFFRONTO_INTR=" & objUtility.CStrToDB(strBaseRaffronto_intr)
-
-
-
-                        sSQL += " where ID_VALORE_VOCE=" & objUtility.cToInt(strID_VALORE_VOCI)
-                        sSQL += " and ID_TIPO_VOCE=" & strIDTIPOVOCE
-                        Log.Debug("SetValoriVoci->" + sSQL)
-
-                        intRetVal = objDBManager.Execute(sSQL)
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                            If Not IsNothing(objDBManager) Then
-                                objDBManager.Kill()
-                                objDBManager.Dispose()
-
-                            End If
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    Try
+                        sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                        myDataView = ctx.GetDataView(sSQL, "TBL")
+                        If myDataView.Count > 0 Then
+                            intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA
                             Return False
-                            'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate")
-                        End If
-                        Return True
-                    Case "I"
-                        'INSERT
-
-                        sSQL = "INSERT into VALORE_VOCI "
-                        sSQL += " (COD_ENTE,cod_tributo,cod_capitolo,id_tipo_voce,cod_voce,cod_tipo_provvedimento,anno,valore,minimo,riducibile,cumulabile,CALCOLATA_SU,CONDIZIONE,PARAMETRO,BASE_RAFFRONTO,COD_TIPO_INTERESSE,CONDIZIONE_INTR,PARAMETRO_INTR,BASE_RAFFRONTO_INTR)"
-                        sSQL += " values ("
-                        sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
-                        sSQL += objUtility.CStrToDB(strCODTRIBUTO) & " ,"
-                        sSQL += objUtility.CStrToDB(strCODCAPITOLO) & " ,"
-                        sSQL += strIDTIPOVOCE & " ,"
-                        sSQL += objUtility.CStrToDB(strCODVOCE) & " ,"
-                        sSQL += objUtility.CStrToDB(strCODTIPOPROVVEDIMENTO) & " ,"
-                        sSQL += objUtility.CStrToDB(strAnno) & " ,"
-                        sSQL += objUtility.CStrToDB(strValore) & " ,"
-                        sSQL += objUtility.CStrToDB(strMinimo) & " ,"
-
-                        If strRid.CompareTo("False") = 0 Then
-                            sSQL += objUtility.CStrToDB(0) & " ,"
-                        Else
-                            sSQL += objUtility.CStrToDB(1) & " ,"
-                        End If
-                        If strCum.CompareTo("False") = 0 Then
-                            sSQL += objUtility.CStrToDB(0) & " ,"
-                        Else
-                            sSQL += objUtility.CStrToDB(1) & " ,"
+                            Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate::VALOREVOCEPRESENTE")
                         End If
 
-                        sSQL += objUtility.cToInt(strCalcolata) & " ,"
-                        sSQL += objUtility.CStrToDB(strCondizione) & " ,"
-                        sSQL += objUtility.CStrToDB(strParametro) & " ,"
-                        sSQL += objUtility.CStrToDB(strBaseRaffronto) & " ,"
-                        sSQL += objUtility.CStrToDB(strTipoInteresse) & " ,"
+                        Select Case strInsUp
+                            Case "U"
+                                strANNO_OLD = objHashTable("ANNO_OLD")
+                                sSQL = "UPDATE VALORE_VOCI set "
+                                sSQL += " ANNO=" & objUtility.CStrToDB(strAnno) & " ,"
+                                sSQL += " VALORE=" & objUtility.CStrToDB(strValore) & " ,"
+                                sSQL += " MINIMO=" & objUtility.CStrToDB(strMinimo) & " ,"
 
-                        sSQL += objUtility.CStrToDB(strCondizione_intr) & " ,"
-                        sSQL += objUtility.CStrToDB(strParametro_intr) & " ,"
-                        sSQL += objUtility.CStrToDB(strBaseRaffronto_intr)
+                                If strCum.CompareTo("False") = 0 Then
+                                    sSQL += " CUMULABILE=" & objUtility.CStrToDB(0) & " ,"
+                                Else
+                                    sSQL += " CUMULABILE=" & objUtility.CStrToDB(1) & " ,"
+                                End If
+                                If strRid.CompareTo("False") = 0 Then
+                                    sSQL += " RIDUCIBILE=" & objUtility.CStrToDB(0) & " ,"
+                                Else
+                                    sSQL += " RIDUCIBILE=" & objUtility.CStrToDB(1) & " ,"
+                                End If
 
-                        sSQL += " )"
-                        Log.Debug("SetValorVoci..->" + sSQL)
-                        intRetVal = objDBManager.Execute(sSQL)
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                            If Not IsNothing(objDBManager) Then
-                                objDBManager.Kill()
-                                objDBManager.Dispose()
+                                sSQL += " CALCOLATA_SU=" & objUtility.cToInt(strCalcolata) & " ,"
+                                sSQL += " CONDIZIONE=" & objUtility.CStrToDB(strCondizione) & " ,"
+                                sSQL += " PARAMETRO=" & objUtility.CStrToDB(strParametro) & " ,"
+                                sSQL += " BASE_RAFFRONTO=" & objUtility.CStrToDB(strBaseRaffronto) & " ,"
+                                sSQL += " COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strTipoInteresse) & " ,"
 
-                            End If
-                            Return False
-                            'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate")
-                        End If
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
-                            If Not IsNothing(objDBManager) Then
-                                objDBManager.Kill()
-                                objDBManager.Dispose()
+                                sSQL += " CONDIZIONE_INTR=" & objUtility.CStrToDB(strCondizione_intr) & " ,"
+                                sSQL += " PARAMETRO_INTR=" & objUtility.CStrToDB(strParametro_intr) & " ,"
+                                sSQL += " BASE_RAFFRONTO_INTR=" & objUtility.CStrToDB(strBaseRaffronto_intr)
+                                sSQL += " where ID_VALORE_VOCE=" & objUtility.cToInt(strID_VALORE_VOCI)
+                                sSQL += " and ID_TIPO_VOCE=" & strIDTIPOVOCE
+                                intRetVal = ctx.ExecuteNonQuery(sSQL)
+                                If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                                    Return False
+                                End If
+                                Return True
+                            Case "I"
+                                sSQL = "INSERT into VALORE_VOCI "
+                                sSQL += " (COD_ENTE,COD_TRIBUTO,COD_CAPITOLO,ID_TIPO_VOCE,COD_VOCE,COD_TIPO_PROVVEDIMENTO,ANNO,VALORE,MINIMO,RIDUCIBILE,CUMULABILE,CALCOLATA_SU,CONDIZIONE,PARAMETRO,BASE_RAFFRONTO,COD_TIPO_INTERESSE,CONDIZIONE_INTR,PARAMETRO_INTR,BASE_RAFFRONTO_INTR)"
+                                sSQL += " VALUES ("
+                                sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
+                                sSQL += objUtility.CStrToDB(strCODTRIBUTO) & " ,"
+                                sSQL += objUtility.CStrToDB(strCODCAPITOLO) & " ,"
+                                sSQL += strIDTIPOVOCE & " ,"
+                                sSQL += objUtility.CStrToDB(strCODVOCE) & " ,"
+                                sSQL += objUtility.CStrToDB(strCODTIPOPROVVEDIMENTO) & " ,"
+                                sSQL += objUtility.CStrToDB(strAnno) & " ,"
+                                sSQL += objUtility.CStrToDB(strValore) & " ,"
+                                sSQL += objUtility.CStrToDB(strMinimo) & " ,"
 
-                            End If
-                            Return False
-                            'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate::" & intRetVal & "::VALOREVOCEPRESENTE")
-                        End If
-                        Return True
-                    Case Else
-                        Return False
-                End Select
+                                If strRid.CompareTo("False") = 0 Then
+                                    sSQL += objUtility.CStrToDB(0) & " ,"
+                                Else
+                                    sSQL += objUtility.CStrToDB(1) & " ,"
+                                End If
+                                If strCum.CompareTo("False") = 0 Then
+                                    sSQL += objUtility.CStrToDB(0) & " ,"
+                                Else
+                                    sSQL += objUtility.CStrToDB(1) & " ,"
+                                End If
+
+                                sSQL += objUtility.cToInt(strCalcolata) & " ,"
+                                sSQL += objUtility.CStrToDB(strCondizione) & " ,"
+                                sSQL += objUtility.CStrToDB(strParametro) & " ,"
+                                sSQL += objUtility.CStrToDB(strBaseRaffronto) & " ,"
+                                sSQL += objUtility.CStrToDB(strTipoInteresse) & " ,"
+
+                                sSQL += objUtility.CStrToDB(strCondizione_intr) & " ,"
+                                sSQL += objUtility.CStrToDB(strParametro_intr) & " ,"
+                                sSQL += objUtility.CStrToDB(strBaseRaffronto_intr)
+
+                                sSQL += " )"
+                                Log.Debug("SetValorVoci..->" + sSQL)
+                                intRetVal = ctx.ExecuteNonQuery(sSQL)
+                                If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                                    Return False
+                                End If
+                                If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
+                                    Return False
+                                End If
+                                Return True
+                            Case Else
+                                Return False
+                        End Select
+                    Catch ex As Exception
+                        Log.Debug("setValoriVoci.erroreQuery: ", ex)
+                        Return Nothing
+                    Finally
+                        ctx.Dispose()
+                    End Try
+                End Using
             Catch ex As Exception
                 intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER
                 Return False
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
             End Try
-
-
         End Function
         <AutoComplete()>
         Public Function DelValoriVoci(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
@@ -1182,18 +1104,18 @@ Namespace COMPlusOPENgovProvvedimenti
                 End If
 
             End If
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Try
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    intRetVal = ctx.ExecuteNonQuery(sSQL)
+                Catch ex As Exception
+                    Log.Debug("DelValoriVoci.errore: ", ex)
+                    Return False
+                Finally
+                    ctx.Dispose()
+                End Try
+            End Using
 
-
-            Log.Debug("DelValoriVoci->" + sSQL)
-            objDBManager = New DBManager
-            objDBManager.Initialize(StringConnectionProvv)
-            intRetVal = objDBManager.Execute(sSQL)
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
             If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                 Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DelValoriVoci::DBOPENgovProvvedimentiUpdate")
             End If
@@ -1232,21 +1154,18 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
                     sSQL += " and COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strCODTIPOINTERESSE)
                     sSQL += " and DAL=" & objUtility.CStrToDB(strDAL, , True)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetTassiInteresse.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    Log.Debug("SetTAssiInt->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
-
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
                 Case "I"
                     'INSERT
                     sSQL = "INSERT into TASSI_DI_INTERESSE "
@@ -1264,23 +1183,25 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += objUtility.CDoubleToDB(strTASSO)
 
                     sSQL += " )"
-                    Log.Debug("SetTassiInt..->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetTassiInteresse.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
                 Case Else
                     Return False
             End Select
+            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetValoriVoci::DBOPENgovProvvedimentiUpdate")
+            End If
+            Return True
         End Function
 
         <AutoComplete()>
@@ -1317,20 +1238,18 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += " and ANNO=" & objUtility.CStrToDB(strANNOOld)
                     sSQL += " and DATA_SCADENZA=" & objUtility.CStrToDB(strDATAOld, , True)
                     sSQL += " AND COD_TRIBUTO=" & objUtility.CStrToDB(strTRIBUTOOld) & ""
-                    Log.Debug("SetScadInt->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetScadenzaInteressi.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetScadenzaInteressi::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
                 Case "I"
                     'INSERT
                     sSQL = "INSERT into TAB_SCADENZA_INTERESSI "
@@ -1343,23 +1262,25 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += objUtility.CStrToDB(strTRIBUTO)
 
                     sSQL += " )"
-                    Log.Debug("SetScadInt..->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetScadenzaInteressi.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetScadenzaInteressi::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
                 Case Else
                     Return False
             End Select
+            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetScadenzaInteressi::DBOPENgovProvvedimentiUpdate")
+            End If
+            Return True
         End Function
 
         <AutoComplete()>
@@ -1433,19 +1354,21 @@ Namespace COMPlusOPENgovProvvedimenti
             strDAL = objHashTable("DAL")
 
             sSQL = "DELETE FROM TASSI_DI_INTERESSE "
-            sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
-            sSQL += " and COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strCODTIPOINTERESSE)
-            sSQL += " and DAL=" & objUtility.CStrToDB(strDAL)
-            Log.Debug("DelTassiInt->" + sSQL)
-            objDBManager = New DBManager
-            objDBManager.Initialize(StringConnectionProvv)
-            intRetVal = objDBManager.Execute(sSQL)
+            sSQL += " WHERE COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
+            sSQL += " AND COD_TIPO_INTERESSE=" & objUtility.CStrToDB(strCODTIPOINTERESSE)
+            sSQL += " AND DAL=" & objUtility.CStrToDB(strDAL)
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Try
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    intRetVal = ctx.ExecuteNonQuery(sSQL)
+                Catch ex As Exception
+                    Log.Debug("DelTassiInteresse.errore: ", ex)
+                    Return False
+                Finally
+                    ctx.Dispose()
+                End Try
+            End Using
 
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
             If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                 Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DelValoriVoci::DBOPENgovProvvedimentiUpdate")
             End If
@@ -1455,33 +1378,30 @@ Namespace COMPlusOPENgovProvvedimenti
         <AutoComplete()>
         Public Function DelScadenzaInteressi(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
             Dim sSQL As String
-            Dim strTRIBUTO, strDATA, strANNO, strNOTE As String
-            Dim strValore, strMinimo, strCum, strRid, strInsUp As String
+            Dim strTRIBUTO, strDATA, strANNO As String
             Dim intRetVal As Integer
             objUtility = New MotoreProvUtility
-
 
             strTRIBUTO = objHashTable("CODTRIBUTO")
             strDATA = objHashTable("DATA")
             strANNO = objHashTable("ANNO")
 
-
-
             sSQL = "DELETE FROM TAB_SCADENZA_INTERESSI "
             sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
             sSQL += " and ANNO=" & objUtility.CStrToDB(strANNO)
-            'sSQL+= " and DATA=" & objUtility.CStrToDB(strDATA)
             sSQL += " and COD_TRIBUTO=" & objUtility.CStrToDB(strTRIBUTO)
-            Log.Debug("DelScadInt->" + sSQL)
-            objDBManager = New DBManager
-            objDBManager.Initialize(StringConnectionProvv)
-            intRetVal = objDBManager.Execute(sSQL)
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Try
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    intRetVal = ctx.ExecuteNonQuery(sSQL)
+                Catch ex As Exception
+                    Log.Debug("DelScadenzaInteressi.errore: ", ex)
+                    Return False
+                Finally
+                    ctx.Dispose()
+                End Try
+            End Using
 
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
             If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                 Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DelScadenzaInteressi::DBOPENgovProvvedimentiUpdate")
             End If
@@ -1529,7 +1449,7 @@ Namespace COMPlusOPENgovProvvedimenti
             Dim sSQL As String
             Dim strInsUp As String
             Dim intRetVal As Integer
-            Dim strID_BASE_DATI, strID_BASE_DATI_OLD As String
+
             objUtility = New MotoreProvUtility
             Dim lngID_MOTIVAZIONE As Long
             Dim strCOD_TRIBUTO, strCOD_VOCE, strCOD_MOTIVAZIONE, strDESC_MOTIVAZIONE, strCOD_TRIBUTO_OLD, strCOD_VOCE_OLD, strCOD_MOTIVAZIONE_OLD, strDESC_MOTIVAZIONE_OLD, strID_MOTIVAZIONE As String
@@ -1545,72 +1465,67 @@ Namespace COMPlusOPENgovProvvedimenti
             strDESC_MOTIVAZIONE_OLD = objHashTable("DESC_MOTIVAZIONE_OLD")
             strID_MOTIVAZIONE = objHashTable("ID_MOTIVAZIONE")
 
-
             strInsUp = objHashTable("INSUP")
             Select Case strInsUp
-
                 Case "U"
-
-                    'UPDATE
                     sSQL = "UPDATE TAB_MOTIVAZIONI set "
                     sSQL += " COD_TRIBUTO=" & objUtility.CStrToDB(strCOD_TRIBUTO) & " ,"
                     sSQL += " COD_VOCE=" & objUtility.CStrToDB(strCOD_VOCE) & " ,"
                     sSQL += " CODICE_MOTIVAZIONE=" & objUtility.CStrToDB(strCOD_MOTIVAZIONE) & " ,"
                     sSQL += " DESCRIZIONE_MOTIVAZIONE=" & objUtility.CStrToDB(strDESC_MOTIVAZIONE)
                     sSQL += " where ID_MOTIVAZIONE=" & objUtility.cToInt(strID_MOTIVAZIONE)
-                    Log.Debug("SetMotivazioni->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetMotivazioni.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetMotivazioni::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
                 Case "I"
-                    'INSERT
                     Dim DBselect As New DBOPENgovProvvedimentiSelect
                     lngID_MOTIVAZIONE = DBselect.getNewID("TAB_MOTIVAZIONI", StringConnectionProvv)
                     'DBselect.Dispose()
 
-                    sSQL = "INSERT into TAB_MOTIVAZIONI "
+                    sSQL = "INSERT INTO TAB_MOTIVAZIONI "
                     sSQL += " (COD_ENTE,COD_TRIBUTO,COD_VOCE,ID_MOTIVAZIONE,CODICE_MOTIVAZIONE,DESCRIZIONE_MOTIVAZIONE)"
-                    sSQL += " values ("
+                    sSQL += " VALUES ("
                     sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
                     sSQL += objUtility.CStrToDB(strCOD_TRIBUTO) & " ,"
                     sSQL += objUtility.CStrToDB(strCOD_VOCE) & " ,"
                     sSQL += objUtility.cToInt(lngID_MOTIVAZIONE) & " ,"
                     sSQL += objUtility.CStrToDB(strCOD_MOTIVAZIONE) & " ,"
                     sSQL += objUtility.CStrToDB(strDESC_MOTIVAZIONE)
-
                     sSQL += " )"
-                    Log.Debug("SetMotivazioni..->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
+                    Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                        Try
+                            sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                            intRetVal = ctx.ExecuteNonQuery(sSQL)
+                        Catch ex As Exception
+                            Log.Debug("SetMotivazioni.errore: ", ex)
+                            Return False
+                        Finally
+                            ctx.Dispose()
+                        End Try
+                    End Using
 
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetMotivazioni::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
-                        'Throw New Exception("Motivazione già presente")
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetMotivazioni::DBOPENgovProvvedimentiUpdate::MOTIVAZIONEPRESENTE")
-                    End If
-
-                    Return True
                 Case Else
                     Return False
             End Select
+
+            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetMotivazioni::DBOPENgovProvvedimentiUpdate")
+            End If
+            If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
+                'Throw New Exception("Motivazione già presente")
+                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetMotivazioni::DBOPENgovProvvedimentiUpdate::MOTIVAZIONEPRESENTE")
+            End If
+
+            Return True
         End Function
         <AutoComplete()>
         Public Function DelMotivazioni(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
@@ -1622,20 +1537,21 @@ Namespace COMPlusOPENgovProvvedimenti
             strID_MOTIVAZIONE = objHashTable("ID_MOTIVAZIONE")
 
             sSQL = "DELETE FROM TAB_MOTIVAZIONI "
-            sSQL += " where ID_MOTIVAZIONE=" & objUtility.cToInt(strID_MOTIVAZIONE)
-            sSQL += " and COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
-            Log.Debug("DelMotivazioni->" + sSQL)
-            objDBManager = New DBManager
-            objDBManager.Initialize(StringConnectionProvv)
-            intRetVal = objDBManager.Execute(sSQL)
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
+            sSQL += " WHERE ID_MOTIVAZIONE=" & objUtility.cToInt(strID_MOTIVAZIONE)
+            sSQL += " AND COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Try
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    intRetVal = ctx.ExecuteNonQuery(sSQL)
+                Catch ex As Exception
+                    Log.Debug("DelMotivazioni.errore: ", ex)
+                    Return False
+                Finally
+                    ctx.Dispose()
+                End Try
+            End Using
             If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DelValoriVoci::DBOPENgovProvvedimentiUpdate")
+                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DelMotivazioni::DBOPENgovProvvedimentiUpdate")
             End If
             Return True
         End Function
@@ -1669,10 +1585,6 @@ Namespace COMPlusOPENgovProvvedimenti
                 sSQL &= " AND COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
 
                 objDSGetTipologieVoci = New DataSet
-                objDBManager = New DBManager
-
-                'objDBManager.Initialize(StringConnectionProvv)
-                'objDA = objDBManager.GetPrivateDataAdapter(sSQL)
                 cmdMyCommand.Connection = New SqlClient.SqlConnection(StringConnectionProvv)
                 cmdMyCommand.CommandTimeout = 0
                 If cmdMyCommand.Connection.State = ConnectionState.Closed Then
@@ -1684,81 +1596,60 @@ Namespace COMPlusOPENgovProvvedimenti
                 objDA.SelectCommand = cmdMyCommand
                 objDA.Fill(objDSGetTipologieVoci, "TIPO_VOCI")
 
-                'If Not IsNothing(objDBManager) Then
-                '    objDBManager.Kill()
-                '    objDBManager.Dispose()
-
-                'End If
-                'If objDSGetTipologieVoci.Tables(0).Rows.Count > 0 Then
-                '    Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetTipologieVoci::DBOPENgovProvvedimentiUpdate::PRESENTE_TIPO_VOCE")
-                'End If
-
                 Select Case strInsUp
-
                     Case "U"
-
-                        'UPDATE
-                        sSQL = "UPDATE TIPOLOGIE_SANZIONI set "
+                        sSQL = "UPDATE TIPOLOGIE_SANZIONI SET "
                         sSQL += " COD_TRIBUTO=" & objUtility.CStrToDB(strCOD_TRIBUTO) & " ,"
                         sSQL += " COD_VOCE=" & objUtility.CStrToDB(strCOD_VOCE) & " ,"
                         sSQL += " DESCRIZIONE=" & objUtility.CStrToDB(strDESC_SANZIONE)
-                        sSQL += " where COD_TRIBUTO=" & objUtility.CStrToDB(strCOD_TRIBUTO_OLD)
-                        sSQL += " and COD_VOCE=" & objUtility.CStrToDB(strCOD_VOCE_OLD)
-
-                        'objDBManager = New DBManager
-                        'objDBManager.Initialize(StringConnectionProvv)
-                        'intRetVal = objDBManager.Execute(sSQL)
-                        Log.Debug("updatetipovoci->" + Costanti.LogQuery(cmdMyCommand))
-                        cmdMyCommand.CommandText = sSQL
-                        intRetVal = cmdMyCommand.ExecuteNonQuery()
-                        'If Not IsNothing(objDBManager) Then
-                        '    objDBManager.Kill()
-                        '    objDBManager.Dispose()
-
-                        'End If
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                            Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetTipologieVoci::DBOPENgovProvvedimentiUpdate")
-                        End If
-                        Return True
+                        sSQL += " WHERE COD_TRIBUTO=" & objUtility.CStrToDB(strCOD_TRIBUTO_OLD)
+                        sSQL += " AND COD_VOCE=" & objUtility.CStrToDB(strCOD_VOCE_OLD)
+                        Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                            Try
+                                sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                                intRetVal = ctx.ExecuteNonQuery(sSQL)
+                            Catch ex As Exception
+                                Log.Debug("SetTipologieVoci.errore: ", ex)
+                                Return False
+                            Finally
+                                ctx.Dispose()
+                            End Try
+                        End Using
                     Case "I"
-                        'INSERT
-
-                        sSQL = "INSERT into TIPOLOGIE_SANZIONI "
+                        sSQL = "INSERT INTO TIPOLOGIE_SANZIONI "
                         sSQL += " (COD_ENTE,COD_TRIBUTO,COD_VOCE,DESCRIZIONE)"
-                        sSQL += " values ("
+                        sSQL += " VALUES ("
                         sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
                         sSQL += objUtility.CStrToDB(strCOD_TRIBUTO) & " ,"
                         sSQL += objUtility.CStrToDB(strCOD_VOCE) & " ,"
                         sSQL += objUtility.CStrToDB(strDESC_SANZIONE)
-
                         sSQL += " )"
-                        'objDBManager = New DBManager
-                        'objDBManager.Initialize(StringConnectionProvv)
-                        'intRetVal = objDBManager.Execute(sSQL)
-                        Log.Debug("instipovoci->" + Costanti.LogQuery(cmdMyCommand))
-                        cmdMyCommand.CommandText = sSQL
-                        intRetVal = cmdMyCommand.ExecuteNonQuery()
-                        'If Not IsNothing(objDBManager) Then
-                        '    objDBManager.Kill()
-                        '    objDBManager.Dispose()
+                        Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                            Try
+                                sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                                intRetVal = ctx.ExecuteNonQuery(sSQL)
+                            Catch ex As Exception
+                                Log.Debug("SetTipologieVoci.errore: ", ex)
+                                Return False
+                            Finally
+                                ctx.Dispose()
+                            End Try
+                        End Using
 
-                        'End If
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                            Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetTipologieVoci::DBOPENgovProvvedimentiUpdate")
-                        End If
-                        If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
-                            Throw New Exception("Sanzione già presente")
-                        End If
-
-                        Return True
                     Case Else
                         Return False
                 End Select
+
+                If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+                    Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetTipologieVoci::DBOPENgovProvvedimentiUpdate")
+                End If
+                If intRetVal = COSTANTValue.CostantiProv.INIT_CHIAVE_DUPLICATA Then
+                    Throw New Exception("Sanzione già presente")
+                End If
+
+                Return True
             Catch ex As Exception
                 Log.Debug("SetTipologieVoci::errore->", ex)
-                If cmdMyCommand.Connection.State = ConnectionState.Open Then
-                    cmdMyCommand.Connection.Close()
-                End If
             End Try
         End Function
         <AutoComplete()>
@@ -1856,105 +1747,190 @@ Namespace COMPlusOPENgovProvvedimenti
             strINT_SALDO = objHashTable("INT_SALDO")
             strInsUp = objHashTable("INSUP")
 
-
-            sSQL = "SELECT * FROM TP_GENERALE_ICI"
-            sSQL += " WHERE COD_ENTE = '" & strCODENTE & "' "
-            sSQL += " AND ANNO = '" & strAnno & "' "
-
-            objDSGetSanzioniConfig = New DataSet
-            objDBManager = New DBManager
-
-            objDBManager.Initialize(StringConnectionProvv)
-            Log.Debug("SetGEnICI->" + sSQL)
-            objDA = objDBManager.GetPrivateDataAdapter(sSQL)
-
-            objDA.Fill(objDSGetSanzioniConfig, "TAB_GENERALE_ICI")
-
-            objDA.Dispose()
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
-            If objDSGetSanzioniConfig.Tables(0).Rows.Count = 0 Then
-                strInsUp = "I"
-            Else
-                strInsUp = "U"
-            End If
-            objDSGetSanzioniConfig.Dispose()
-            Select Case strInsUp
-
-                Case "U"
-
-                    'UPDATE
-                    sSQL = "UPDATE TP_GENERALE_ICI set "
-                    sSQL += " RIENTRO_LIQ_CONF_AVVISO=" & objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
-                    sSQL += " RIENTRO_LIQ_ATTO_DEF=" & objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
-                    sSQL += " INT_ACCONTO_SALDO=" & objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
-                    sSQL += " INT_SALDO=" & objUtility.CToBit(strINT_SALDO)
-                    sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
-                    sSQL += " and ANNO=" & objUtility.CStrToDB(strAnno)
-                    Log.Debug("SetGeneraleICI->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
-
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetAnniProvvedimenti::DBOPENgovProvvedimentiUpdate")
-                    End If
-                    Return True
-                Case "I"
-
-                    If CInt(strAnno) < 2007 Then
-                        strDATA_VERSAMENTO_ACCONTO = strAnno & "0630"
-                        strDATA_VERSAMENTO_SALDO = strAnno & "1230"
+            Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Try
+                    sSQL = "SELECT * FROM TP_GENERALE_ICI"
+                    sSQL += " WHERE COD_ENTE = '" & strCODENTE & "' "
+                    sSQL += " AND ANNO = '" & strAnno & "' "
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDSGetSanzioniConfig = ctx.GetDataSet(sSQL, "TBL")
+                    If objDSGetSanzioniConfig.Tables(0).Rows.Count = 0 Then
+                        strInsUp = "0"
                     Else
-                        strDATA_VERSAMENTO_ACCONTO = strAnno & "0616"
-                        strDATA_VERSAMENTO_SALDO = strAnno & "1216"
+                        strInsUp = "1"
                     End If
+                    objDSGetSanzioniConfig.Dispose()
+                    If strInsUp = Utility.Costanti.AZIONE_UPDATE Then
+                        sSQL = "UPDATE TP_GENERALE_ICI set "
+                        sSQL += " RIENTRO_LIQ_CONF_AVVISO=" & objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
+                        sSQL += " RIENTRO_LIQ_ATTO_DEF=" & objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
+                        sSQL += " INT_ACCONTO_SALDO=" & objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
+                        sSQL += " INT_SALDO=" & objUtility.CToBit(strINT_SALDO)
+                        sSQL += " WHERE COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
+                        sSQL += " AND ANNO=" & objUtility.CStrToDB(strAnno)
+                        sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                        intRetVal = ctx.ExecuteNonQuery(sSQL)
+                    Else
+                        If CInt(strAnno) < 2007 Then
+                            strDATA_VERSAMENTO_ACCONTO = strAnno & "0630"
+                            strDATA_VERSAMENTO_SALDO = strAnno & "1230"
+                        Else
+                            strDATA_VERSAMENTO_ACCONTO = strAnno & "0616"
+                            strDATA_VERSAMENTO_SALDO = strAnno & "1216"
+                        End If
 
-
-                    'INSERT
-                    sSQL = "Insert Into TP_GENERALE_ICI "
-                    sSQL += " (COD_ENTE,ANNO,RIENTRO_LIQ_CONF_AVVISO,RIENTRO_LIQ_ATTO_DEF,INT_ACCONTO_SALDO,INT_SALDO,DATA_VERSAMENTO_ACCONTO,DATA_VERSAMENTO_SALDO)"
-                    sSQL += " values ("
-                    sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
-                    sSQL += objUtility.CStrToDB(strAnno) & " ,"
-                    sSQL += objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
-                    sSQL += objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
-                    sSQL += objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
-                    sSQL += objUtility.CToBit(strINT_SALDO) & " ,"
-                    sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_ACCONTO) & " ,"
-                    sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_SALDO)
-                    sSQL += " )"
-
-                    Log.Debug("SetGeneraleICI..->" + sSQL)
-                    objDBManager = New DBManager
-                    objDBManager.Initialize(StringConnectionProvv)
-                    intRetVal = objDBManager.Execute(sSQL)
-
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
+                        'INSERT
+                        sSQL = "INSERT INTO TP_GENERALE_ICI "
+                        sSQL += " (COD_ENTE,ANNO,RIENTRO_LIQ_CONF_AVVISO,RIENTRO_LIQ_ATTO_DEF,INT_ACCONTO_SALDO,INT_SALDO,DATA_VERSAMENTO_ACCONTO,DATA_VERSAMENTO_SALDO)"
+                        sSQL += " VALUES ("
+                        sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
+                        sSQL += objUtility.CStrToDB(strAnno) & " ,"
+                        sSQL += objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
+                        sSQL += objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
+                        sSQL += objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
+                        sSQL += objUtility.CToBit(strINT_SALDO) & " ,"
+                        sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_ACCONTO) & " ,"
+                        sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_SALDO)
+                        sSQL += " )"
+                        sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                        intRetVal = ctx.ExecuteNonQuery(sSQL)
                     End If
                     If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetAnniProvvedimenti::DBOPENgovProvvedimentiUpdate")
+                        Throw New Exception("DBOPENgovProvvedimentiUpdate.SetGeneraleICI.errore")
                     End If
                     Return True
-                Case Else
+                Catch ex As Exception
+                    Log.Debug("SetGeneraleICI.errore: ", ex)
                     Return False
-            End Select
-
+                Finally
+                    ctx.Dispose()
+                End Try
+            End Using
 
 
         End Function
+        '<AutoComplete()>
+        'Public Function SetGeneraleICI(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
+        '    Dim sSQL As String
+        '    Dim strAnno, strInsUp As String
+        '    Dim strRIENTRO_LIQ_CONF_AVVISO, strRIENTRO_LIQ_ATTO_DEF, strINT_ACCONTO_SALDO, strINT_SALDO As String
+        '    Dim intRetVal As Integer
+        '    Dim objDSGetSanzioniConfig As DataSet = Nothing
+        '    Dim objDA As SqlDataAdapter
+
+        '    Dim strDATA_VERSAMENTO_ACCONTO As String
+
+        '    Dim strDATA_VERSAMENTO_SALDO As String
+
+        '    objUtility = New MotoreProvUtility
+
+        '    strAnno = objHashTable("ANNO")
+
+        '    strRIENTRO_LIQ_CONF_AVVISO = objHashTable("RIENTRO_LIQ_CONF_AVVISO")
+        '    strRIENTRO_LIQ_ATTO_DEF = objHashTable("RIENTRO_LIQ_ATTO_DEF")
+        '    strINT_ACCONTO_SALDO = objHashTable("INT_ACCONTO_SALDO")
+        '    strINT_SALDO = objHashTable("INT_SALDO")
+        '    strInsUp = objHashTable("INSUP")
+
+
+        '    sSQL = "SELECT * FROM TP_GENERALE_ICI"
+        '    sSQL += " WHERE COD_ENTE = '" & strCODENTE & "' "
+        '    sSQL += " AND ANNO = '" & strAnno & "' "
+
+        '    objDSGetSanzioniConfig = New DataSet
+        '    objDBManager = New DBManager
+
+        '    objDBManager.Initialize(StringConnectionProvv)
+        '    Log.Debug("SetGEnICI->" + sSQL)
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
+
+        '    objDA.Fill(objDSGetSanzioniConfig, "TAB_GENERALE_ICI")
+
+        '    objDA.Dispose()
+        '    If Not IsNothing(objDBManager) Then
+        '        objDBManager.Kill()
+        '        objDBManager.Dispose()
+
+        '    End If
+
+        '    If objDSGetSanzioniConfig.Tables(0).Rows.Count = 0 Then
+        '        strInsUp = "I"
+        '    Else
+        '        strInsUp = "U"
+        '    End If
+        '    objDSGetSanzioniConfig.Dispose()
+        '    Select Case strInsUp
+
+        '        Case "U"
+
+        '            'UPDATE
+        '            sSQL = "UPDATE TP_GENERALE_ICI set "
+        '            sSQL += " RIENTRO_LIQ_CONF_AVVISO=" & objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
+        '            sSQL += " RIENTRO_LIQ_ATTO_DEF=" & objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
+        '            sSQL += " INT_ACCONTO_SALDO=" & objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
+        '            sSQL += " INT_SALDO=" & objUtility.CToBit(strINT_SALDO)
+        '            sSQL += " where COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & " "
+        '            sSQL += " and ANNO=" & objUtility.CStrToDB(strAnno)
+        '            Log.Debug("SetGeneraleICI->" + sSQL)
+        '            objDBManager = New DBManager
+        '            objDBManager.Initialize(StringConnectionProvv)
+        '            intRetVal = objDBManager.Execute(sSQL)
+
+        '            If Not IsNothing(objDBManager) Then
+        '                objDBManager.Kill()
+        '                objDBManager.Dispose()
+
+        '            End If
+        '            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetAnniProvvedimenti::DBOPENgovProvvedimentiUpdate")
+        '            End If
+        '            Return True
+        '        Case "I"
+
+        '            If CInt(strAnno) < 2007 Then
+        '                strDATA_VERSAMENTO_ACCONTO = strAnno & "0630"
+        '                strDATA_VERSAMENTO_SALDO = strAnno & "1230"
+        '            Else
+        '                strDATA_VERSAMENTO_ACCONTO = strAnno & "0616"
+        '                strDATA_VERSAMENTO_SALDO = strAnno & "1216"
+        '            End If
+
+
+        '            'INSERT
+        '            sSQL = "Insert Into TP_GENERALE_ICI "
+        '            sSQL += " (COD_ENTE,ANNO,RIENTRO_LIQ_CONF_AVVISO,RIENTRO_LIQ_ATTO_DEF,INT_ACCONTO_SALDO,INT_SALDO,DATA_VERSAMENTO_ACCONTO,DATA_VERSAMENTO_SALDO)"
+        '            sSQL += " values ("
+        '            sSQL += objUtility.CStrToDB(strCODENTE) & " ,"
+        '            sSQL += objUtility.CStrToDB(strAnno) & " ,"
+        '            sSQL += objUtility.CToBit(strRIENTRO_LIQ_CONF_AVVISO) & " ,"
+        '            sSQL += objUtility.CToBit(strRIENTRO_LIQ_ATTO_DEF) & " ,"
+        '            sSQL += objUtility.CToBit(strINT_ACCONTO_SALDO) & " ,"
+        '            sSQL += objUtility.CToBit(strINT_SALDO) & " ,"
+        '            sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_ACCONTO) & " ,"
+        '            sSQL += objUtility.CStrToDB(strDATA_VERSAMENTO_SALDO)
+        '            sSQL += " )"
+
+        '            Log.Debug("SetGeneraleICI..->" + sSQL)
+        '            objDBManager = New DBManager
+        '            objDBManager.Initialize(StringConnectionProvv)
+        '            intRetVal = objDBManager.Execute(sSQL)
+
+        '            If Not IsNothing(objDBManager) Then
+        '                objDBManager.Kill()
+        '                objDBManager.Dispose()
+
+        '            End If
+        '            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::SetAnniProvvedimenti::DBOPENgovProvvedimentiUpdate")
+        '            End If
+        '            Return True
+        '        Case Else
+        '            Return False
+        '    End Select
+
+
+
+        'End Function
 
 #End Region
 
@@ -2119,11 +2095,6 @@ Namespace COMPlusOPENgovProvvedimenti
             Catch ex As Exception
                 Log.Error("DBOPENgovProvvedimentiUpdate::SetProvvedimentiAccertamenti::" & ex.Message)
                 Return -1
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
         ''' <summary>
@@ -2667,64 +2638,64 @@ Namespace COMPlusOPENgovProvvedimenti
             End Try
         End Function
         '*** ***
-        Private Function SET_RIDUZIONIDETASSAZIONI_ACCERTAMENTO(strCODEnte As String, ByVal intCODContribuente As Integer, ByVal lngIDProvvedimento As Long, ByVal objRid() As RemotingInterfaceMotoreTarsu.MotoreTarsu.Oggetti.OggettoRiduzione, ByVal objDet() As RemotingInterfaceMotoreTarsu.MotoreTarsu.Oggetti.OggettoDetassazione, ByVal objDBManager As DBManager, ByVal objHashTable As Hashtable) As Long
+        'Private Function SET_RIDUZIONIDETASSAZIONI_ACCERTAMENTO(strCODEnte As String, ByVal intCODContribuente As Integer, ByVal lngIDProvvedimento As Long, ByVal objRid() As RemotingInterfaceMotoreTarsu.MotoreTarsu.Oggetti.OggettoRiduzione, ByVal objDet() As RemotingInterfaceMotoreTarsu.MotoreTarsu.Oggetti.OggettoDetassazione, ByVal objDBManager As DBManager, ByVal objHashTable As Hashtable) As Long
 
-            Dim intCount As Integer
-            Dim strSQL As String
-            Dim intRetVal As Long
-
-
-            objUtility = New MotoreProvUtility
+        '    Dim intCount As Integer
+        '    Dim strSQL As String
+        '    Dim intRetVal As Long
 
 
-            If Not objRid Is Nothing Then
-                For intCount = 0 To objRid.Length - 1
-                    strSQL = "INSERT INTO TBLACCERTATORIDUZIONE"
-                    strSQL += " (IDENTE, IDACCERTAMENTO, IDRIDUZIONE)"
-                    strSQL += " VALUES(" & vbCrLf
+        '    objUtility = New MotoreProvUtility
 
-                    strSQL += objUtility.CStrToDB(objRid(intCount).sIdEnte) & "," & vbCrLf
-                    strSQL += objUtility.CIdToDB(objRid(intCount).IdDettaglioTestata) & "," & vbCrLf
-                    strSQL += objUtility.CIdToDB(objRid(intCount).IdRiduzione) & "," & vbCrLf
-                    strSQL += ")"
-                    Log.Debug("setri->" + strSQL)
-                    intRetVal = objDBManager.Execute(strSQL)
 
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Return 0
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DETTAGLIO_VOCI_ACCERTAMENTI_INSERT::DBOPENgovProvvedimentiUpdate")
-                    End If
+        '    If Not objRid Is Nothing Then
+        '        For intCount = 0 To objRid.Length - 1
+        '            strSQL = "INSERT INTO TBLACCERTATORIDUZIONE"
+        '            strSQL += " (IDENTE, IDACCERTAMENTO, IDRIDUZIONE)"
+        '            strSQL += " VALUES(" & vbCrLf
 
-                Next
-            End If
+        '            strSQL += objUtility.CStrToDB(objRid(intCount).sIdEnte) & "," & vbCrLf
+        '            strSQL += objUtility.CIdToDB(objRid(intCount).IdDettaglioTestata) & "," & vbCrLf
+        '            strSQL += objUtility.CIdToDB(objRid(intCount).IdRiduzione) & "," & vbCrLf
+        '            strSQL += ")"
+        '            Log.Debug("setri->" + strSQL)
+        '            intRetVal = objDBManager.Execute(strSQL)
 
-            If Not objDet Is Nothing Then
-                For intCount = 0 To objDet.Length - 1
-                    strSQL = "INSERT INTO TBLACCERTATODETASSAZIONE"
-                    strSQL += " (IDENTE, IDACCERTAMENTO, IDRIDUZIONE)"
-                    strSQL += " VALUES(" & vbCrLf
+        '            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '                Return 0
+        '                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DETTAGLIO_VOCI_ACCERTAMENTI_INSERT::DBOPENgovProvvedimentiUpdate")
+        '            End If
 
-                    strSQL += objUtility.CStrToDB(objDet(intCount).sIdEnte) & "," & vbCrLf
-                    strSQL += objUtility.CIdToDB(objDet(intCount).IdDettaglioTestata) & "," & vbCrLf
-                    strSQL += objUtility.CIdToDB(objDet(intCount).IdDettaglioTestata) & "," & vbCrLf
-                    strSQL += ")"
-                    Log.Debug("setdet->" + strSQL)
-                    intRetVal = objDBManager.Execute(strSQL)
+        '        Next
+        '    End If
 
-                    If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                        Return 0
-                        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DETTAGLIO_VOCI_ACCERTAMENTI_INSERT::DBOPENgovProvvedimentiUpdate")
-                    End If
+        '    If Not objDet Is Nothing Then
+        '        For intCount = 0 To objDet.Length - 1
+        '            strSQL = "INSERT INTO TBLACCERTATODETASSAZIONE"
+        '            strSQL += " (IDENTE, IDACCERTAMENTO, IDRIDUZIONE)"
+        '            strSQL += " VALUES(" & vbCrLf
 
-                Next
-            End If
+        '            strSQL += objUtility.CStrToDB(objDet(intCount).sIdEnte) & "," & vbCrLf
+        '            strSQL += objUtility.CIdToDB(objDet(intCount).IdDettaglioTestata) & "," & vbCrLf
+        '            strSQL += objUtility.CIdToDB(objDet(intCount).IdDettaglioTestata) & "," & vbCrLf
+        '            strSQL += ")"
+        '            Log.Debug("setdet->" + strSQL)
+        '            intRetVal = objDBManager.Execute(strSQL)
 
-            Return 1
-            ''If Not objDataSet Is Nothing Then
-            ''    objDataSet.Dispose()
-            ''End If
+        '            If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '                Return 0
+        '                Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DETTAGLIO_VOCI_ACCERTAMENTI_INSERT::DBOPENgovProvvedimentiUpdate")
+        '            End If
 
-        End Function
+        '        Next
+        '    End If
+
+        '    Return 1
+        '    ''If Not objDataSet Is Nothing Then
+        '    ''    objDataSet.Dispose()
+        '    ''End If
+
+        'End Function
 
         Private Function SetUIDichAcc(ByVal IDProcedimento As Integer, ByVal ListDichiarato() As objUIICIAccert, ByVal ListAccertato() As objUIICIAccert, myStringConnection As String) As Integer
             Try
@@ -2838,61 +2809,61 @@ Namespace COMPlusOPENgovProvvedimenti
 #End Region
 
 #Region "GESTIONE RITORNO DICHIARAZIONI"
-        <AutoComplete()>
-        Public Function setDATA_ATTO_DEFINITIVO(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
+        '<AutoComplete()>
+        'Public Function setDATA_ATTO_DEFINITIVO(StringConnectionProvv As String, strCODENTE As String, ByVal objHashTable As Hashtable) As Boolean
 
-            Dim strSQL As String
-            Dim objUtility As New MotoreProvUtility
-            Dim intRetVal As Integer
-            Dim objDS_PROVVEDIMENTI As DataSet
-            Dim strDATAADD As String
-            Dim strIDPROVVEDIMENTO As String
-            Dim intCOUNT As Integer
-            setDATA_ATTO_DEFINITIVO = False
-            Dim objDBOPENgovProvvedimentiSelect As New DBOPENgovProvvedimentiSelect
+        '    Dim strSQL As String
+        '    Dim objUtility As New MotoreProvUtility
+        '    Dim intRetVal As Integer
+        '    Dim objDS_PROVVEDIMENTI As DataSet
+        '    Dim strDATAADD As String
+        '    Dim strIDPROVVEDIMENTO As String
+        '    Dim intCOUNT As Integer
+        '    setDATA_ATTO_DEFINITIVO = False
+        '    Dim objDBOPENgovProvvedimentiSelect As New DBOPENgovProvvedimentiSelect
 
-            objDBManager = New DBManager
+        '    objDBManager = New DBManager
 
-            objDBManager.Initialize(StringConnectionProvv)
+        '    objDBManager.Initialize(StringConnectionProvv)
 
-            objDS_PROVVEDIMENTI = objDBOPENgovProvvedimentiSelect.getDati_PROVVEDIMENTI(StringConnectionProvv, strCODENTE, objHashTable)
+        '    objDS_PROVVEDIMENTI = objDBOPENgovProvvedimentiSelect.getDati_PROVVEDIMENTI(StringConnectionProvv, strCODENTE, objHashTable)
 
-            For intCOUNT = 0 To objDS_PROVVEDIMENTI.Tables("PROVVEDIMENTI").Rows.Count - 1
-                Dim rowPROVVEDIMENTI As DataRow = objDS_PROVVEDIMENTI.Tables("PROVVEDIMENTI").Rows(intCOUNT)
-                strDATAADD = objUtility.GiraDataFromDB(rowPROVVEDIMENTI("DATA_NOTIFICA_AVVISO"))
-                strIDPROVVEDIMENTO = objUtility.CToStr(rowPROVVEDIMENTI("ID_PROVVEDIMENTO"))
+        '    For intCOUNT = 0 To objDS_PROVVEDIMENTI.Tables("PROVVEDIMENTI").Rows.Count - 1
+        '        Dim rowPROVVEDIMENTI As DataRow = objDS_PROVVEDIMENTI.Tables("PROVVEDIMENTI").Rows(intCOUNT)
+        '        strDATAADD = objUtility.GiraDataFromDB(rowPROVVEDIMENTI("DATA_NOTIFICA_AVVISO"))
+        '        strIDPROVVEDIMENTO = objUtility.CToStr(rowPROVVEDIMENTI("ID_PROVVEDIMENTO"))
 
-                strDATAADD = objUtility.GiraData(DateAdd(DateInterval.Day, 60, CDate(strDATAADD)))
+        '        strDATAADD = objUtility.GiraData(DateAdd(DateInterval.Day, 60, CDate(strDATAADD)))
 
-                strSQL = "UPDATE PROVVEDIMENTI" & vbCrLf
-                strSQL += "SET DATA_ATTO_DEFINITIVO =" & objUtility.CStrToDB(strDATAADD) & vbCrLf
-                strSQL += "WHERE" & vbCrLf
-                strSQL += "ID_PROVVEDIMENTO=" & strIDPROVVEDIMENTO & vbCrLf
-                Log.Debug("setattodef->" + strSQL)
-                intRetVal = objDBManager.Execute(strSQL)
+        '        strSQL = "UPDATE PROVVEDIMENTI" & vbCrLf
+        '        strSQL += "SET DATA_ATTO_DEFINITIVO =" & objUtility.CStrToDB(strDATAADD) & vbCrLf
+        '        strSQL += "WHERE" & vbCrLf
+        '        strSQL += "ID_PROVVEDIMENTO=" & strIDPROVVEDIMENTO & vbCrLf
+        '        Log.Debug("setattodef->" + strSQL)
+        '        intRetVal = objDBManager.Execute(strSQL)
 
-                If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
+        '        If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
+        '            If Not IsNothing(objDBManager) Then
+        '                objDBManager.Kill()
+        '                objDBManager.Dispose()
 
-                    End If
-                    Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::setDATA_ATTO_DEFINITIVO::DBOPENgovProvvedimentiUpdate")
-                End If
+        '            End If
+        '            Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::setDATA_ATTO_DEFINITIVO::DBOPENgovProvvedimentiUpdate")
+        '        End If
 
-            Next
+        '    Next
 
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
+        '    If Not IsNothing(objDBManager) Then
+        '        objDBManager.Kill()
+        '        objDBManager.Dispose()
 
-            End If
+        '    End If
 
-            setDATA_ATTO_DEFINITIVO = True
+        '    setDATA_ATTO_DEFINITIVO = True
 
-            Return setDATA_ATTO_DEFINITIVO
+        '    Return setDATA_ATTO_DEFINITIVO
 
-        End Function
+        'End Function
 #End Region
 
 #Region "GESTIONE FREEZER"
@@ -3217,11 +3188,6 @@ Namespace COMPlusOPENgovProvvedimenti
             Catch ex As Exception
                 Log.Debug("setprovvedimentiaccertamentitarsu::si è verificato il seguente errore::", ex)
                 Return Nothing
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
         '<AutoComplete()>
@@ -3897,70 +3863,129 @@ Namespace COMPlusOPENgovProvvedimenti
             Dim strSQL As String
 
             Try
-                objDBManager = New DBManager
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, myStringConnection)
+                    'CANCELLO TBLTESTATATARSU TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLRUOLODICHIARATO TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLRUOLODICHIARATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLOGGETTITARSU TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLOGGETTITARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLDETTAGLIOTESTATATARSU TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLDETTAGLIOTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLDETTAGLIOTESTATARIDUZIONI TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLDETTAGLIOTESTATARIDUZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLDETTAGLIOTESTATADETASSAZIONI TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLDETTAGLIOTESTATADETASSAZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
 
-                objDBManager.Initialize(myStringConnection)
+                    'CANCELLO PROVVEDIMENTI TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM PROVVEDIMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TAB_PROCEDIMENTO TRAMITE ID_PROCEDIMENTO
+                    strSQL = "DELETE FROM TAB_PROCEDIMENTI WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLRUOLOACCERTATO TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLRUOLOACCERTATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLRIEPILOGOACCERTATOTARSU TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLRIEPILOGOACCERTATOTARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO DETTAGLIO_VOCI_ACCERTAMENTI TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM DETTAGLIO_VOCI_ACCERTAMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLACCERTATORIDUZIONE TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLACCERTATORIDUZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO TBLACCERTATODETASSAZIONE TRAMITE ID_PROVVEDIMENTO
+                    strSQL = "DELETE FROM TBLACCERTATODETASSAZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
+                    'CANCELLO IL PROVVEDIMENTO RETTIFICATO LEGATO AL PROVVEDIMENTO
+                    strSQL = "DELETE FROM TP_PROVVEDIMENTI_RETTIFICATI WHERE ID_PROVVEDIMENTO_FIGLIO=" & ID_PROVVEDIMENTO
+                    ctx.ExecuteNonQuery(strSQL)
 
-                'CANCELLO TBLTESTATATARSU TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLRUOLODICHIARATO TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLRUOLODICHIARATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLOGGETTITARSU TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLOGGETTITARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLDETTAGLIOTESTATATARSU TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLDETTAGLIOTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLDETTAGLIOTESTATARIDUZIONI TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLDETTAGLIOTESTATARIDUZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLDETTAGLIOTESTATADETASSAZIONI TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLDETTAGLIOTESTATADETASSAZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-
-
-                'CANCELLO PROVVEDIMENTI TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM PROVVEDIMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TAB_PROCEDIMENTO TRAMITE ID_PROCEDIMENTO
-                strSQL = "DELETE FROM TAB_PROCEDIMENTI WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLRUOLOACCERTATO TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLRUOLOACCERTATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLRIEPILOGOACCERTATOTARSU TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLRIEPILOGOACCERTATOTARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO DETTAGLIO_VOCI_ACCERTAMENTI TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM DETTAGLIO_VOCI_ACCERTAMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLACCERTATORIDUZIONE TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLACCERTATORIDUZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO TBLACCERTATODETASSAZIONE TRAMITE ID_PROVVEDIMENTO
-                strSQL = "DELETE FROM TBLACCERTATODETASSAZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-                'CANCELLO IL PROVVEDIMENTO RETTIFICATO LEGATO AL PROVVEDIMENTO
-                strSQL = "DELETE from TP_PROVVEDIMENTI_RETTIFICATI WHERE ID_PROVVEDIMENTO_FIGLIO=" & ID_PROVVEDIMENTO
-                objDBManager.Execute(strSQL)
-
-                'If intRetVal = COSTANTValue.CostantiProv.init_value_number Then
-                '    'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DeleteProvvedimentiLiquidazioni::DBOPENgovProvvedimentiUpdate")
-                '    Return False
-                'End If
+                    ctx.Dispose()
+                End Using
 
                 Return True
             Catch ex As Exception
                 Log.Debug("DeleteProvvedimentiAccertamentoTARSU:: si è verificato il seguente errore::", ex)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
+        '<AutoComplete()>
+        'Public Function TARSU_DeleteProvvedimentiAccertamento(ByVal myStringConnection As String, ByVal ID_PROCEDIMENTO As Long, ByVal ID_PROVVEDIMENTO As Long) As Boolean
+        '    'Dim intRetVal As Integer
+        '    Dim strSQL As String
+
+        '    Try
+        '        objDBManager = New DBManager
+
+        '        objDBManager.Initialize(myStringConnection)
+
+        '        'CANCELLO TBLTESTATATARSU TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLRUOLODICHIARATO TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLRUOLODICHIARATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLOGGETTITARSU TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLOGGETTITARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLDETTAGLIOTESTATATARSU TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLDETTAGLIOTESTATATARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLDETTAGLIOTESTATARIDUZIONI TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLDETTAGLIOTESTATARIDUZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLDETTAGLIOTESTATADETASSAZIONI TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLDETTAGLIOTESTATADETASSAZIONI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+
+
+        '        'CANCELLO PROVVEDIMENTI TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM PROVVEDIMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TAB_PROCEDIMENTO TRAMITE ID_PROCEDIMENTO
+        '        strSQL = "DELETE FROM TAB_PROCEDIMENTI WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLRUOLOACCERTATO TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLRUOLOACCERTATO WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLRIEPILOGOACCERTATOTARSU TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLRIEPILOGOACCERTATOTARSU WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO DETTAGLIO_VOCI_ACCERTAMENTI TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM DETTAGLIO_VOCI_ACCERTAMENTI WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLACCERTATORIDUZIONE TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLACCERTATORIDUZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO TBLACCERTATODETASSAZIONE TRAMITE ID_PROVVEDIMENTO
+        '        strSQL = "DELETE FROM TBLACCERTATODETASSAZIONE WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+        '        'CANCELLO IL PROVVEDIMENTO RETTIFICATO LEGATO AL PROVVEDIMENTO
+        '        strSQL = "DELETE from TP_PROVVEDIMENTI_RETTIFICATI WHERE ID_PROVVEDIMENTO_FIGLIO=" & ID_PROVVEDIMENTO
+        '        objDBManager.Execute(strSQL)
+
+        '        'If intRetVal = COSTANTValue.CostantiProv.init_value_number Then
+        '        '    'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DeleteProvvedimentiLiquidazioni::DBOPENgovProvvedimentiUpdate")
+        '        '    Return False
+        '        'End If
+
+        '        Return True
+        '    Catch ex As Exception
+        '        Log.Debug("DeleteProvvedimentiAccertamentoTARSU:: si è verificato il seguente errore::", ex)
+        '    Finally
+        '        If Not IsNothing(objDBManager) Then
+        '            objDBManager.Kill()
+        '            objDBManager.Dispose()
+        '        End If
+        '    End Try
+        'End Function
         Private Function TARSU_SetDETTAGLIO_VOCI_ACCERTAMENTI(IdEnte As String, ByVal lngIDProvvedimento As Long, ByVal objSanzioni As DataSet, ByVal ObjInteressiSanzioni As DataSet, ListInteressi() As ObjInteressiSanzioni, ByVal objAddizionali() As OggettoAddizionaleAccertamento, myStringConnection As String) As Long
             Dim intRetVal As Integer = 0
 
@@ -4037,7 +4062,6 @@ Namespace COMPlusOPENgovProvvedimenti
                 Dim sANNO, TIPO_PROVVEDIMENTO As String
                 Dim dblIMPORTODICHIARATO, dblIMPORTOACCERTATO As Double
 
-
                 objUtility = New MotoreProvUtility
 
                 Dim FncDBSelect As New DBOPENgovProvvedimentiSelect
@@ -4053,8 +4077,6 @@ Namespace COMPlusOPENgovProvvedimenti
                 TIPO_PROVVEDIMENTO = myHashTable("TIPOPROVVEDIMENTO")
                 sANNO = myHashTable("ANNOACCERTAMENTO")
 
-                objDBManager = New DBManager
-                objDBManager.Initialize(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"))
                 Log.Debug("letto i primi objhastable")
                 '*** 201810 - Generazione Massiva Atti ***
                 '#### tolto test perché passato sempre =0 #############################################################################################################################
@@ -4073,7 +4095,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     'vuol dire che ho trovato un atto non definitivo oppure nessun atto
                     If ID_PROVVEDIMENTO <> 0 Then
                         'OSAP_DeleteProvvedimentiAccertamento(objDBManager, ID_PROVVEDIMENTO)
-                        DeleteAtto(objDBManager, ID_PROVVEDIMENTO, Operatore)
+                        DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), ID_PROVVEDIMENTO, Operatore)
                     End If
                 End If
                 'End If
@@ -4141,10 +4163,6 @@ Namespace COMPlusOPENgovProvvedimenti
                 myAtto = CastToOggettoAtto(oAtto)
                 If SetProvvedimento(myDBType, myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), myAtto, Operatore) = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     'If OSAP_SetProvvedimento(objDBManager, oAtto, sCOGNOME_INVIO, sVIA_RCP, sPOSIZIONE_CIV_RCP, sCIVICO_RCP, sESPONENTE_CIVICO_RCP, sCAP_RCP, sFRAZIONE_RCP, sCOMUNE_RCP, sPROVINCIA_RCP) = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-                    End If
                     Log.Debug("SetProvvedimentiAccertamentiOSAP:errore inserimento provvedimento")
                     Throw New Exception("SetProvvedimentiAccertamentiOSAP")
                     Return Nothing
@@ -4156,7 +4174,7 @@ Namespace COMPlusOPENgovProvvedimenti
                 If SetProcedimento(myDBType, myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), myAtto, lngIDProcedimento, myAtto.TipoProvvedimento) = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     'If OSAP_SetProcedimento(objDBManager, oAtto, lngIDProcedimento, TIPO_PROVVEDIMENTO, dblIMPORTOACCERTATO, dblIMPORTODICHIARATO) = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     'CANCELLO PROVVEDIMENTI TRAMITE ID_PROVVEDIMENTO
-                    DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                    DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                     Log.Debug("SetProvvedimentiAccertamentiOSAP::errore inserimento procedimento")
                     Throw New Exception("SetProvvedimentiAccertamentiOSAP")
                     Return Nothing
@@ -4164,18 +4182,18 @@ Namespace COMPlusOPENgovProvvedimenti
 
                 'inserisco DICHIARATO OSAP
                 If Not IsNothing(objDichiaratoOSAP) Then
-                    If OSAP_SetDichiaratoListArticoli(objDBManager, COSTANTValue.CostantiProv.AMBITO_DICHIARATO, oAtto, objDichiaratoOSAP, oAtto.ID_PROVVEDIMENTO) <> 1 Then
+                    If OSAP_SetDichiaratoListArticoli(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), COSTANTValue.CostantiProv.AMBITO_DICHIARATO, oAtto, objDichiaratoOSAP, oAtto.ID_PROVVEDIMENTO) <> 1 Then
                         'CANCELLO PROVVEDIMENTI e PROCEDIMEnTI TRAMITE ID_PROVVEDIMENTO
-                        DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                        DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                         Log.Debug("SetProvvedimentiAccertamentiOSAP::errore inserimento accertato")
                         Throw New Exception("SetProvvedimentiAccertamentiOSAP")
                         Return Nothing
                     End If
                 End If
                 'inserisco ACCERTATO OSAP
-                If OSAP_SetDichiaratoListArticoli(objDBManager, COSTANTValue.CostantiProv.AMBITO_ACCERTATO, oAtto, objAccertatoOSAP, oAtto.ID_PROVVEDIMENTO) <> 1 Then
+                If OSAP_SetDichiaratoListArticoli(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), COSTANTValue.CostantiProv.AMBITO_ACCERTATO, oAtto, objAccertatoOSAP, oAtto.ID_PROVVEDIMENTO) <> 1 Then
                     'CANCELLO PROVVEDIMENTI e PROCEDIMEnTI TRAMITE ID_PROVVEDIMENTO
-                    DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                    DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                     Log.Debug("SetProvvedimentiAccertamentiOSAP::errore inserimento accertato")
                     Throw New Exception("SetProvvedimentiAccertamentiOSAP")
                     Return Nothing
@@ -4183,17 +4201,17 @@ Namespace COMPlusOPENgovProvvedimenti
 
                 'inserisco sanzioni ed interessi di fase confronto dichiarato-accertato
                 If TARSU_SetDETTAGLIO_VOCI_ACCERTAMENTI(oAtto.COD_ENTE, oAtto.ID_PROVVEDIMENTO, dsSanzioni, dsInteressi, Nothing, Nothing, myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI")) <> 1 Then
-                    DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                    DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                     Return Nothing
                 End If
                 'inserisco sanzioni ed interessi di fase confronto importo dichiarato-importo pagato
                 If TARSU_SetDETTAGLIO_VOCI_ACCERTAMENTI(oAtto.COD_ENTE, oAtto.ID_PROVVEDIMENTO, dsSanzioniImpDicVSImpPag, dsInteressiImpDicVSImpPag, Nothing, Nothing, myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI")) <> 1 Then
-                    DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                    DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                     Return Nothing
                 End If
                 'inserisco sanzioni ed interessi di fase confronto scad dichiarato-data pagato
                 If TARSU_SetDETTAGLIO_VOCI_ACCERTAMENTI(oAtto.COD_ENTE, oAtto.ID_PROVVEDIMENTO, dsSanzioniScadDicVSDataPag, dsInteressiScadDicVSDataPag, Nothing, Nothing, myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI")) <> 1 Then
-                    DeleteAtto(objDBManager, oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
+                    DeleteAtto(myHashTable("CONNECTIONSTRINGOPENGOVPROVVEDIMENTI"), oAtto.ID_PROVVEDIMENTO, Operatore) 'OSAP_DeleteProvvedimentiAccertamento(objDBManager, oAtto.ID_PROVVEDIMENTO)
                     Return Nothing
                 End If
 
@@ -4206,11 +4224,6 @@ Namespace COMPlusOPENgovProvvedimenti
             Catch ex As Exception
                 Log.Debug("SetProvvedimentiAccertamentiOSAP::si è verificato il seguente errore::" & ex.Message)
                 Throw New Exception("SetProvvedimentiAccertamentiOSAP::" & " " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-                End If
             End Try
         End Function
         ''' <summary>
@@ -4227,12 +4240,12 @@ Namespace COMPlusOPENgovProvvedimenti
         ''' </revision>
         ''' </revisionHistory>
         <AutoComplete()>
-        Public Function DeleteAtto(ByVal MyDBManager As DBManager, ByVal nIdProvvedimento As Integer, sOperatore As String) As Boolean
+        Public Function DeleteAtto(myConnectionString As String, ByVal nIdProvvedimento As Integer, sOperatore As String) As Boolean
             Dim sSQL As String
 
             Try
-                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, MyDBManager.GetConnection.ConnectionString)
-                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure,"prc_DeleteProvvedimento", "IDPROVVEDIMENTO", "OPERATORE")
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, myConnectionString)
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_DeleteProvvedimento", "IDPROVVEDIMENTO", "OPERATORE")
                     ctx.ExecuteNonQuery(sSQL, ctx.GetParam("IDPROVVEDIMENTO", nIdProvvedimento), ctx.GetParam("OPERATORE", sOperatore))
                     ctx.Dispose()
                 End Using
@@ -4262,89 +4275,180 @@ Namespace COMPlusOPENgovProvvedimenti
         '        Throw New Exception("DeleteProvvedimentiAccertamentoOSAP::" & ex.Message)
         '    End Try
         'End Function
-        Private Function OSAP_SetDichiaratoListArticoli(ByVal MyDBManager As DBManager, ByVal Ambito As Integer, ByVal oAtto As ComPlusInterface.OggettoAttoOSAP, ByVal oListArticoli() As ComPlusInterface.OSAPAccertamentoArticolo, ByVal IdProvvedimento As Long) As Integer
-            Dim MyCommand As New SqlClient.SqlCommand
+        Private Function OSAP_SetDichiaratoListArticoli(ByVal myConnectionString As String, ByVal Ambito As Integer, ByVal oAtto As ComPlusInterface.OggettoAttoOSAP, ByVal oListArticoli() As ComPlusInterface.OSAPAccertamentoArticolo, ByVal IdProvvedimento As Long) As Integer
             Dim x, y As Integer
             Dim intRetVal As Integer
             Dim myIdentity As Long
-
+            Dim sSQL As String
+            Dim myDataView As New DataView
 
             objUtility = New MotoreProvUtility
 
             Try
-                MyCommand.Connection = New SqlConnection(objDBManager.GetConnection.ConnectionString)
-                MyCommand.CommandType = CommandType.StoredProcedure
                 For x = 0 To oListArticoli.Length - 1
                     If Not IsNothing(oListArticoli(x).Calcolo) Then
                         intRetVal = 0
-                        MyCommand.Parameters.Clear()
-                        If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
-                            MyCommand.CommandText = "prc_SetOSAPDichiarato"
-                        Else
-                            MyCommand.CommandText = "prc_SetOSAPAccertato"
-                            MyCommand.Parameters.AddWithValue("@IMPORTO_DIFFIMPOSTA", oListArticoli(x).ImpDiffImposta)
-                            MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI", oListArticoli(x).ImpSanzioni)
-                            MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI_RIDOTTO", oListArticoli(x).ImpSanzioniRidotto)
-                            MyCommand.Parameters.AddWithValue("@IMPORTO_INTERESSI", oListArticoli(x).ImpInteressi)
-                        End If
-                        MyCommand.Parameters.AddWithValue("@IDPOSIZIONE", -1)
-                        MyCommand.Parameters.AddWithValue("@IDENTE", oAtto.COD_ENTE)
-                        MyCommand.Parameters.AddWithValue("@ANNO", oAtto.ANNO)
-                        MyCommand.Parameters.AddWithValue("@IDCONTRIBUENTE", oAtto.COD_CONTRIBUENTE)
-                        MyCommand.Parameters.AddWithValue("@IDDICHIARAZIONE", oListArticoli(x).IdDichiarazione)
-                        MyCommand.Parameters.AddWithValue("@IDARTICOLO", oListArticoli(x).IdArticolo)
-                        'MyCommand.Parameters.AddWithValue("@IDARTICOLOPADRE", oListArticoli(x).IdArticoloPadre)
-                        MyCommand.Parameters.AddWithValue("@IDTRIBUTO", oListArticoli(x).IdTributo)
-                        MyCommand.Parameters.AddWithValue("@CODVIA", oListArticoli(x).CodVia)
-                        MyCommand.Parameters.AddWithValue("@CIVICO", oListArticoli(x).Civico)
-                        MyCommand.Parameters.AddWithValue("@ESPONENTE", oListArticoli(x).Esponente)
-                        MyCommand.Parameters.AddWithValue("@INTERNO", oListArticoli(x).Interno)
-                        MyCommand.Parameters.AddWithValue("@SCALA", oListArticoli(x).Scala)
-                        MyCommand.Parameters.AddWithValue("@IDCATEGORIA", oListArticoli(x).Categoria.IdCategoria)
-                        MyCommand.Parameters.AddWithValue("@IDTIPOLOGIAOCCUPAZIONE", oListArticoli(x).TipologiaOccupazione.IdTipologiaOccupazione)
-                        MyCommand.Parameters.AddWithValue("@CONSISTENZA", oListArticoli(x).Consistenza)
-                        MyCommand.Parameters.AddWithValue("@IDTIPOCONSISTENZA", oListArticoli(x).TipoConsistenzaTOCO.IdTipoConsistenza)
-                        MyCommand.Parameters.AddWithValue("@DATAINIZIOOCCUPAZIONE", oListArticoli(x).DataInizioOccupazione)
-                        MyCommand.Parameters.AddWithValue("@DATAFINEOCCUPAZIONE", oListArticoli(x).DataFineOccupazione)
-                        MyCommand.Parameters.AddWithValue("@IDDURATA", oListArticoli(x).TipoDurata.IdDurata)
-                        MyCommand.Parameters.AddWithValue("@DURATAOCCUPAZIONE", oListArticoli(x).DurataOccupazione)
-                        MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_IMPORTO", oListArticoli(x).MaggiorazioneImporto)
-                        MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_PERC", oListArticoli(x).MaggiorazionePerc)
-                        MyCommand.Parameters.AddWithValue("@NOTE", oListArticoli(x).Note)
-                        MyCommand.Parameters.AddWithValue("@DETRAZIONE_IMPORTO", oListArticoli(x).DetrazioneImporto)
-                        MyCommand.Parameters.AddWithValue("@ATTRAZIONE", oListArticoli(x).Attrazione)
-                        MyCommand.Parameters.AddWithValue("@OPERATORE", oListArticoli(x).Operatore)
-                        MyCommand.Parameters.AddWithValue("@DATA_INSERIMENTO", oListArticoli(x).DataInserimento)
-                        MyCommand.Parameters.AddWithValue("@TARIFFA_APPLICATA", oListArticoli(x).Calcolo.TariffaApplicata)
-                        MyCommand.Parameters.AddWithValue("@IMPORTO_LORDO", oListArticoli(x).Calcolo.ImportoLordo)
-                        MyCommand.Parameters.AddWithValue("@IMPORTO", oListArticoli(x).Calcolo.ImportoCalcolato)
-                        MyCommand.Parameters.AddWithValue("@ID_PROVVEDIMENTO", IdProvvedimento)
-                        MyCommand.Parameters.AddWithValue("@ID_LEGAME", oListArticoli(x).IdLegame)
-                        Dim sValParametri As String = Utility.Costanti.GetValParamCmd(MyCommand)
-                        Log.Debug("osapsetdicart->" + Costanti.LogQuery(MyCommand))
-                        'eseguo la query
-                        Dim DrReturn As SqlClient.SqlDataReader
-                        DrReturn = MyDBManager.GetPrivateDataReaderCOMplus(MyCommand)
-                        Do While DrReturn.Read
-                            myIdentity = DrReturn(0)
-                        Loop
-                        DrReturn.Close()
-
-                        For y = 0 To oListArticoli(x).ListAgevolazioni.GetUpperBound(0)
-                            If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
-                                MyCommand.CommandText = "prc_SetDichiaratoVSAgevolazione"
-                            Else
-                                MyCommand.CommandText = "prc_SetAccertatoVSAgevolazione"
-                            End If
-                            MyCommand.Parameters.Clear()
-                            MyCommand.Parameters.AddWithValue("@IDARTICOLO", myIdentity)
-                            MyCommand.Parameters.AddWithValue("@IDAGEVOLAZIONE", oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
-                            'eseguo la query
-                            Log.Debug("osapsetdicartagev->" + Costanti.LogQuery(MyCommand))
-                            If MyDBManager.Execute(MyCommand) <> 1 Then
-                                Log.Debug("OSAP_SetDichiaratoListArticoli::errore in inserimento agevolazioni::procedure::" & MyCommand.CommandText & "::@IDARTICOLO" & myIdentity & "::@IDAGEVOLAZIONE::" & oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
-                            End If
-                        Next
+                        Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, myConnectionString)
+                            Try
+                                If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+                                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_SetOSAPDichiarato", "IDPOSIZIONE" _
+                                        , "IDENTE" _
+                                        , "ANNO" _
+                                        , "IDCONTRIBUENTE" _
+                                        , "IDDICHIARAZIONE" _
+                                        , "IDARTICOLO" _
+                                        , "IDTRIBUTO" _
+                                        , "CODVIA" _
+                                        , "CIVICO" _
+                                        , "ESPONENTE" _
+                                        , "INTERNO" _
+                                        , "SCALA" _
+                                        , "IDCATEGORIA" _
+                                        , "IDTIPOLOGIAOCCUPAZIONE" _
+                                        , "CONSISTENZA" _
+                                        , "IDTIPOCONSISTENZA" _
+                                        , "DATAINIZIOOCCUPAZIONE" _
+                                        , "DATAFINEOCCUPAZIONE" _
+                                        , "IDDURATA" _
+                                        , "DURATAOCCUPAZIONE" _
+                                        , "MAGGIORAZIONE_IMPORTO" _
+                                        , "MAGGIORAZIONE_PERC" _
+                                        , "NOTE" _
+                                        , "DETRAZIONE_IMPORTO" _
+                                        , "ATTRAZIONE" _
+                                        , "OPERATORE" _
+                                        , "DATA_INSERIMENTO" _
+                                        , "TARIFFA_APPLICATA" _
+                                        , "IMPORTO_LORDO" _
+                                        , "IMPORTO" _
+                                        , "ID_PROVVEDIMENTO" _
+                                        , "ID_LEGAME")
+                                    myDataView = ctx.GetDataView(sSQL, "TBL", ctx.GetParam("IDPOSIZIONE", -1) _
+                                            , ctx.GetParam("IDENTE", oAtto.COD_ENTE) _
+                                            , ctx.GetParam("ANNO", oAtto.ANNO) _
+                                            , ctx.GetParam("IDCONTRIBUENTE", oAtto.COD_CONTRIBUENTE) _
+                                            , ctx.GetParam("IDDICHIARAZIONE", oListArticoli(x).IdDichiarazione) _
+                                            , ctx.GetParam("IDARTICOLO", oListArticoli(x).IdArticolo) _
+                                            , ctx.GetParam("IDTRIBUTO", oListArticoli(x).IdTributo) _
+                                            , ctx.GetParam("CODVIA", oListArticoli(x).CodVia) _
+                                            , ctx.GetParam("CIVICO", oListArticoli(x).Civico) _
+                                            , ctx.GetParam("ESPONENTE", oListArticoli(x).Esponente) _
+                                            , ctx.GetParam("INTERNO", oListArticoli(x).Interno) _
+                                            , ctx.GetParam("SCALA", oListArticoli(x).Scala) _
+                                            , ctx.GetParam("IDCATEGORIA", oListArticoli(x).Categoria.IdCategoria) _
+                                            , ctx.GetParam("IDTIPOLOGIAOCCUPAZIONE", oListArticoli(x).TipologiaOccupazione.IdTipologiaOccupazione) _
+                                            , ctx.GetParam("CONSISTENZA", oListArticoli(x).Consistenza) _
+                                            , ctx.GetParam("IDTIPOCONSISTENZA", oListArticoli(x).TipoConsistenzaTOCO.IdTipoConsistenza) _
+                                            , ctx.GetParam("DATAINIZIOOCCUPAZIONE", oListArticoli(x).DataInizioOccupazione) _
+                                            , ctx.GetParam("DATAFINEOCCUPAZIONE", oListArticoli(x).DataFineOccupazione) _
+                                            , ctx.GetParam("IDDURATA", oListArticoli(x).TipoDurata.IdDurata) _
+                                            , ctx.GetParam("DURATAOCCUPAZIONE", oListArticoli(x).DurataOccupazione) _
+                                            , ctx.GetParam("MAGGIORAZIONE_IMPORTO", oListArticoli(x).MaggiorazioneImporto) _
+                                            , ctx.GetParam("MAGGIORAZIONE_PERC", oListArticoli(x).MaggiorazionePerc) _
+                                            , ctx.GetParam("NOTE", oListArticoli(x).Note) _
+                                            , ctx.GetParam("DETRAZIONE_IMPORTO", oListArticoli(x).DetrazioneImporto) _
+                                            , ctx.GetParam("ATTRAZIONE", oListArticoli(x).Attrazione) _
+                                            , ctx.GetParam("OPERATORE", oListArticoli(x).Operatore) _
+                                            , ctx.GetParam("DATA_INSERIMENTO", oListArticoli(x).DataInserimento) _
+                                            , ctx.GetParam("TARIFFA_APPLICATA", oListArticoli(x).Calcolo.TariffaApplicata) _
+                                            , ctx.GetParam("IMPORTO_LORDO", oListArticoli(x).Calcolo.ImportoLordo) _
+                                            , ctx.GetParam("IMPORTO", oListArticoli(x).Calcolo.ImportoCalcolato) _
+                                            , ctx.GetParam("ID_PROVVEDIMENTO", IdProvvedimento) _
+                                            , ctx.GetParam("ID_LEGAME", oListArticoli(x).IdLegame))
+                                Else
+                                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_SetOSAPAccertato", "IDPOSIZIONE" _
+                                        , "IDENTE" _
+                                        , "ANNO" _
+                                        , "IDCONTRIBUENTE" _
+                                        , "IDDICHIARAZIONE" _
+                                        , "IDARTICOLO" _
+                                        , "IDTRIBUTO" _
+                                        , "CODVIA" _
+                                        , "CIVICO" _
+                                        , "ESPONENTE" _
+                                        , "INTERNO" _
+                                        , "SCALA" _
+                                        , "IDCATEGORIA" _
+                                        , "IDTIPOLOGIAOCCUPAZIONE" _
+                                        , "CONSISTENZA" _
+                                        , "IDTIPOCONSISTENZA" _
+                                        , "DATAINIZIOOCCUPAZIONE" _
+                                        , "DATAFINEOCCUPAZIONE" _
+                                        , "IDDURATA" _
+                                        , "DURATAOCCUPAZIONE" _
+                                        , "MAGGIORAZIONE_IMPORTO" _
+                                        , "MAGGIORAZIONE_PERC" _
+                                        , "NOTE" _
+                                        , "DETRAZIONE_IMPORTO" _
+                                        , "ATTRAZIONE" _
+                                        , "OPERATORE" _
+                                        , "DATA_INSERIMENTO" _
+                                        , "TARIFFA_APPLICATA" _
+                                        , "IMPORTO_LORDO" _
+                                        , "IMPORTO" _
+                                        , "IMPORTO_DIFFIMPOSTA" _
+                                        , "IMPORTO_SANZIONI" _
+                                        , "IMPORTO_SANZIONI_RIDOTTO" _
+                                        , "IMPORTO_INTERESSI" _
+                                        , "ID_PROVVEDIMENTO" _
+                                        , "ID_LEGAME")
+                                    myDataView = ctx.GetDataView(sSQL, "TBL", ctx.GetParam("IDPOSIZIONE", -1) _
+                                            , ctx.GetParam("IDENTE", oAtto.COD_ENTE) _
+                                            , ctx.GetParam("ANNO", oAtto.ANNO) _
+                                            , ctx.GetParam("IDCONTRIBUENTE", oAtto.COD_CONTRIBUENTE) _
+                                            , ctx.GetParam("IDDICHIARAZIONE", oListArticoli(x).IdDichiarazione) _
+                                            , ctx.GetParam("IDARTICOLO", oListArticoli(x).IdArticolo) _
+                                            , ctx.GetParam("IDTRIBUTO", oListArticoli(x).IdTributo) _
+                                            , ctx.GetParam("CODVIA", oListArticoli(x).CodVia) _
+                                            , ctx.GetParam("CIVICO", oListArticoli(x).Civico) _
+                                            , ctx.GetParam("ESPONENTE", oListArticoli(x).Esponente) _
+                                            , ctx.GetParam("INTERNO", oListArticoli(x).Interno) _
+                                            , ctx.GetParam("SCALA", oListArticoli(x).Scala) _
+                                            , ctx.GetParam("IDCATEGORIA", oListArticoli(x).Categoria.IdCategoria) _
+                                            , ctx.GetParam("IDTIPOLOGIAOCCUPAZIONE", oListArticoli(x).TipologiaOccupazione.IdTipologiaOccupazione) _
+                                            , ctx.GetParam("CONSISTENZA", oListArticoli(x).Consistenza) _
+                                            , ctx.GetParam("IDTIPOCONSISTENZA", oListArticoli(x).TipoConsistenzaTOCO.IdTipoConsistenza) _
+                                            , ctx.GetParam("DATAINIZIOOCCUPAZIONE", oListArticoli(x).DataInizioOccupazione) _
+                                            , ctx.GetParam("DATAFINEOCCUPAZIONE", oListArticoli(x).DataFineOccupazione) _
+                                            , ctx.GetParam("IDDURATA", oListArticoli(x).TipoDurata.IdDurata) _
+                                            , ctx.GetParam("DURATAOCCUPAZIONE", oListArticoli(x).DurataOccupazione) _
+                                            , ctx.GetParam("MAGGIORAZIONE_IMPORTO", oListArticoli(x).MaggiorazioneImporto) _
+                                            , ctx.GetParam("MAGGIORAZIONE_PERC", oListArticoli(x).MaggiorazionePerc) _
+                                            , ctx.GetParam("NOTE", oListArticoli(x).Note) _
+                                            , ctx.GetParam("DETRAZIONE_IMPORTO", oListArticoli(x).DetrazioneImporto) _
+                                            , ctx.GetParam("ATTRAZIONE", oListArticoli(x).Attrazione) _
+                                            , ctx.GetParam("OPERATORE", oListArticoli(x).Operatore) _
+                                            , ctx.GetParam("DATA_INSERIMENTO", oListArticoli(x).DataInserimento) _
+                                            , ctx.GetParam("TARIFFA_APPLICATA", oListArticoli(x).Calcolo.TariffaApplicata) _
+                                            , ctx.GetParam("IMPORTO_LORDO", oListArticoli(x).Calcolo.ImportoLordo) _
+                                            , ctx.GetParam("IMPORTO", oListArticoli(x).Calcolo.ImportoCalcolato) _
+                                            , ctx.GetParam("IMPORTO_DIFFIMPOSTA", oListArticoli(x).ImpDiffImposta) _
+                                            , ctx.GetParam("IMPORTO_SANZIONI", oListArticoli(x).ImpSanzioni) _
+                                            , ctx.GetParam("IMPORTO_SANZIONI_RIDOTTO", oListArticoli(x).ImpSanzioniRidotto) _
+                                            , ctx.GetParam("IMPORTO_INTERESSI", oListArticoli(x).ImpInteressi) _
+                                            , ctx.GetParam("ID_PROVVEDIMENTO", IdProvvedimento) _
+                                            , ctx.GetParam("ID_LEGAME", oListArticoli(x).IdLegame))
+                                End If
+                            Catch ex As Exception
+                                Log.Debug("OSAP_SetDichiaratoListArticoli::si è verificato il seguenet errore::" & ex.Message)
+                                Return Nothing
+                            Finally
+                                ctx.Dispose()
+                            End Try
+                            For Each myRow As DataRowView In myDataView
+                                myIdentity = myRow(0)
+                            Next
+                            For y = 0 To oListArticoli(x).ListAgevolazioni.GetUpperBound(0)
+                                If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+                                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_SetDichiaratoVSAgevolazione", "IDARTICOLO", "IDAGEVOLAZIONE")
+                                Else
+                                    sSQL = ctx.GetSQL(DBModel.TypeQuery.StoredProcedure, "prc_SetAccertatoVSAgevolazione", "IDARTICOLO", "IDAGEVOLAZIONE")
+                                End If
+                                ctx.ExecuteNonQuery(sSQL, "TBL", ctx.GetParam("IDARTICOLO", myIdentity) _
+                                            , ctx.GetParam("IDAGEVOLAZIONE", oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
+                                        )
+                            Next
+                        End Using
                     End If
                 Next
                 Return 1
@@ -4353,6 +4457,188 @@ Namespace COMPlusOPENgovProvvedimenti
                 Return 0
             End Try
         End Function
+        'Private Function OSAP_SetDichiaratoListArticoli(ByVal myConnectionString As String, ByVal Ambito As Integer, ByVal oAtto As ComPlusInterface.OggettoAttoOSAP, ByVal oListArticoli() As ComPlusInterface.OSAPAccertamentoArticolo, ByVal IdProvvedimento As Long) As Integer
+        '    Dim MyCommand As New SqlClient.SqlCommand
+        '    Dim x, y As Integer
+        '    Dim intRetVal As Integer
+        '    Dim myIdentity As Long
+
+
+        '    objUtility = New MotoreProvUtility
+
+        '    Try
+        '        MyCommand.Connection = New SqlConnection(myConnectionString)
+        '        MyCommand.CommandType = CommandType.StoredProcedure
+        '        For x = 0 To oListArticoli.Length - 1
+        '            If Not IsNothing(oListArticoli(x).Calcolo) Then
+        '                intRetVal = 0
+        '                MyCommand.Parameters.Clear()
+        '                If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+        '                    MyCommand.CommandText = "prc_SetOSAPDichiarato"
+        '                Else
+        '                    MyCommand.CommandText = "prc_SetOSAPAccertato"
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_DIFFIMPOSTA", oListArticoli(x).ImpDiffImposta)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI", oListArticoli(x).ImpSanzioni)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI_RIDOTTO", oListArticoli(x).ImpSanzioniRidotto)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_INTERESSI", oListArticoli(x).ImpInteressi)
+        '                End If
+        '                MyCommand.Parameters.AddWithValue("@IDPOSIZIONE", -1)
+        '                MyCommand.Parameters.AddWithValue("@IDENTE", oAtto.COD_ENTE)
+        '                MyCommand.Parameters.AddWithValue("@ANNO", oAtto.ANNO)
+        '                MyCommand.Parameters.AddWithValue("@IDCONTRIBUENTE", oAtto.COD_CONTRIBUENTE)
+        '                MyCommand.Parameters.AddWithValue("@IDDICHIARAZIONE", oListArticoli(x).IdDichiarazione)
+        '                MyCommand.Parameters.AddWithValue("@IDARTICOLO", oListArticoli(x).IdArticolo)
+        '                'MyCommand.Parameters.AddWithValue("@IDARTICOLOPADRE", oListArticoli(x).IdArticoloPadre)
+        '                MyCommand.Parameters.AddWithValue("@IDTRIBUTO", oListArticoli(x).IdTributo)
+        '                MyCommand.Parameters.AddWithValue("@CODVIA", oListArticoli(x).CodVia)
+        '                MyCommand.Parameters.AddWithValue("@CIVICO", oListArticoli(x).Civico)
+        '                MyCommand.Parameters.AddWithValue("@ESPONENTE", oListArticoli(x).Esponente)
+        '                MyCommand.Parameters.AddWithValue("@INTERNO", oListArticoli(x).Interno)
+        '                MyCommand.Parameters.AddWithValue("@SCALA", oListArticoli(x).Scala)
+        '                MyCommand.Parameters.AddWithValue("@IDCATEGORIA", oListArticoli(x).Categoria.IdCategoria)
+        '                MyCommand.Parameters.AddWithValue("@IDTIPOLOGIAOCCUPAZIONE", oListArticoli(x).TipologiaOccupazione.IdTipologiaOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@CONSISTENZA", oListArticoli(x).Consistenza)
+        '                MyCommand.Parameters.AddWithValue("@IDTIPOCONSISTENZA", oListArticoli(x).TipoConsistenzaTOCO.IdTipoConsistenza)
+        '                MyCommand.Parameters.AddWithValue("@DATAINIZIOOCCUPAZIONE", oListArticoli(x).DataInizioOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@DATAFINEOCCUPAZIONE", oListArticoli(x).DataFineOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@IDDURATA", oListArticoli(x).TipoDurata.IdDurata)
+        '                MyCommand.Parameters.AddWithValue("@DURATAOCCUPAZIONE", oListArticoli(x).DurataOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_IMPORTO", oListArticoli(x).MaggiorazioneImporto)
+        '                MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_PERC", oListArticoli(x).MaggiorazionePerc)
+        '                MyCommand.Parameters.AddWithValue("@NOTE", oListArticoli(x).Note)
+        '                MyCommand.Parameters.AddWithValue("@DETRAZIONE_IMPORTO", oListArticoli(x).DetrazioneImporto)
+        '                MyCommand.Parameters.AddWithValue("@ATTRAZIONE", oListArticoli(x).Attrazione)
+        '                MyCommand.Parameters.AddWithValue("@OPERATORE", oListArticoli(x).Operatore)
+        '                MyCommand.Parameters.AddWithValue("@DATA_INSERIMENTO", oListArticoli(x).DataInserimento)
+        '                MyCommand.Parameters.AddWithValue("@TARIFFA_APPLICATA", oListArticoli(x).Calcolo.TariffaApplicata)
+        '                MyCommand.Parameters.AddWithValue("@IMPORTO_LORDO", oListArticoli(x).Calcolo.ImportoLordo)
+        '                MyCommand.Parameters.AddWithValue("@IMPORTO", oListArticoli(x).Calcolo.ImportoCalcolato)
+        '                MyCommand.Parameters.AddWithValue("@ID_PROVVEDIMENTO", IdProvvedimento)
+        '                MyCommand.Parameters.AddWithValue("@ID_LEGAME", oListArticoli(x).IdLegame)
+        '                Dim sValParametri As String = Utility.Costanti.GetValParamCmd(MyCommand)
+        '                Log.Debug("osapsetdicart->" + Costanti.LogQuery(MyCommand))
+        '                'eseguo la query
+        '                Dim DrReturn As SqlClient.SqlDataReader
+        '                DrReturn = MyDBManager.GetPrivateDataReaderCOMplus(MyCommand)
+        '                Do While DrReturn.Read
+        '                    myIdentity = DrReturn(0)
+        '                Loop
+        '                DrReturn.Close()
+
+        '                For y = 0 To oListArticoli(x).ListAgevolazioni.GetUpperBound(0)
+        '                    If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+        '                        MyCommand.CommandText = "prc_SetDichiaratoVSAgevolazione"
+        '                    Else
+        '                        MyCommand.CommandText = "prc_SetAccertatoVSAgevolazione"
+        '                    End If
+        '                    MyCommand.Parameters.Clear()
+        '                    MyCommand.Parameters.AddWithValue("@IDARTICOLO", myIdentity)
+        '                    MyCommand.Parameters.AddWithValue("@IDAGEVOLAZIONE", oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
+        '                    'eseguo la query
+        '                    Log.Debug("osapsetdicartagev->" + Costanti.LogQuery(MyCommand))
+        '                    If MyDBManager.Execute(MyCommand) <> 1 Then
+        '                        Log.Debug("OSAP_SetDichiaratoListArticoli::errore in inserimento agevolazioni::procedure::" & MyCommand.CommandText & "::@IDARTICOLO" & myIdentity & "::@IDAGEVOLAZIONE::" & oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
+        '                    End If
+        '                Next
+        '            End If
+        '        Next
+        '        Return 1
+        '    Catch ex As Exception
+        '        Log.Debug("OSAP_SetDichiaratoListArticoli::si è verificato il seguenet errore::" & ex.Message)
+        '        Return 0
+        '    End Try
+        'End Function
+        'Private Function OSAP_SetDichiaratoListArticoli(ByVal MyDBManager As DBManager, ByVal Ambito As Integer, ByVal oAtto As ComPlusInterface.OggettoAttoOSAP, ByVal oListArticoli() As ComPlusInterface.OSAPAccertamentoArticolo, ByVal IdProvvedimento As Long) As Integer
+        '    Dim MyCommand As New SqlClient.SqlCommand
+        '    Dim x, y As Integer
+        '    Dim intRetVal As Integer
+        '    Dim myIdentity As Long
+
+
+        '    objUtility = New MotoreProvUtility
+
+        '    Try
+        '        MyCommand.Connection = New SqlConnection(objDBManager.GetConnection.ConnectionString)
+        '        MyCommand.CommandType = CommandType.StoredProcedure
+        '        For x = 0 To oListArticoli.Length - 1
+        '            If Not IsNothing(oListArticoli(x).Calcolo) Then
+        '                intRetVal = 0
+        '                MyCommand.Parameters.Clear()
+        '                If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+        '                    MyCommand.CommandText = "prc_SetOSAPDichiarato"
+        '                Else
+        '                    MyCommand.CommandText = "prc_SetOSAPAccertato"
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_DIFFIMPOSTA", oListArticoli(x).ImpDiffImposta)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI", oListArticoli(x).ImpSanzioni)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_SANZIONI_RIDOTTO", oListArticoli(x).ImpSanzioniRidotto)
+        '                    MyCommand.Parameters.AddWithValue("@IMPORTO_INTERESSI", oListArticoli(x).ImpInteressi)
+        '                End If
+        '                MyCommand.Parameters.AddWithValue("@IDPOSIZIONE", -1)
+        '                MyCommand.Parameters.AddWithValue("@IDENTE", oAtto.COD_ENTE)
+        '                MyCommand.Parameters.AddWithValue("@ANNO", oAtto.ANNO)
+        '                MyCommand.Parameters.AddWithValue("@IDCONTRIBUENTE", oAtto.COD_CONTRIBUENTE)
+        '                MyCommand.Parameters.AddWithValue("@IDDICHIARAZIONE", oListArticoli(x).IdDichiarazione)
+        '                MyCommand.Parameters.AddWithValue("@IDARTICOLO", oListArticoli(x).IdArticolo)
+        '                'MyCommand.Parameters.AddWithValue("@IDARTICOLOPADRE", oListArticoli(x).IdArticoloPadre)
+        '                MyCommand.Parameters.AddWithValue("@IDTRIBUTO", oListArticoli(x).IdTributo)
+        '                MyCommand.Parameters.AddWithValue("@CODVIA", oListArticoli(x).CodVia)
+        '                MyCommand.Parameters.AddWithValue("@CIVICO", oListArticoli(x).Civico)
+        '                MyCommand.Parameters.AddWithValue("@ESPONENTE", oListArticoli(x).Esponente)
+        '                MyCommand.Parameters.AddWithValue("@INTERNO", oListArticoli(x).Interno)
+        '                MyCommand.Parameters.AddWithValue("@SCALA", oListArticoli(x).Scala)
+        '                MyCommand.Parameters.AddWithValue("@IDCATEGORIA", oListArticoli(x).Categoria.IdCategoria)
+        '                MyCommand.Parameters.AddWithValue("@IDTIPOLOGIAOCCUPAZIONE", oListArticoli(x).TipologiaOccupazione.IdTipologiaOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@CONSISTENZA", oListArticoli(x).Consistenza)
+        '                MyCommand.Parameters.AddWithValue("@IDTIPOCONSISTENZA", oListArticoli(x).TipoConsistenzaTOCO.IdTipoConsistenza)
+        '                MyCommand.Parameters.AddWithValue("@DATAINIZIOOCCUPAZIONE", oListArticoli(x).DataInizioOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@DATAFINEOCCUPAZIONE", oListArticoli(x).DataFineOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@IDDURATA", oListArticoli(x).TipoDurata.IdDurata)
+        '                MyCommand.Parameters.AddWithValue("@DURATAOCCUPAZIONE", oListArticoli(x).DurataOccupazione)
+        '                MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_IMPORTO", oListArticoli(x).MaggiorazioneImporto)
+        '                MyCommand.Parameters.AddWithValue("@MAGGIORAZIONE_PERC", oListArticoli(x).MaggiorazionePerc)
+        '                MyCommand.Parameters.AddWithValue("@NOTE", oListArticoli(x).Note)
+        '                MyCommand.Parameters.AddWithValue("@DETRAZIONE_IMPORTO", oListArticoli(x).DetrazioneImporto)
+        '                MyCommand.Parameters.AddWithValue("@ATTRAZIONE", oListArticoli(x).Attrazione)
+        '                MyCommand.Parameters.AddWithValue("@OPERATORE", oListArticoli(x).Operatore)
+        '                MyCommand.Parameters.AddWithValue("@DATA_INSERIMENTO", oListArticoli(x).DataInserimento)
+        '                MyCommand.Parameters.AddWithValue("@TARIFFA_APPLICATA", oListArticoli(x).Calcolo.TariffaApplicata)
+        '                MyCommand.Parameters.AddWithValue("@IMPORTO_LORDO", oListArticoli(x).Calcolo.ImportoLordo)
+        '                MyCommand.Parameters.AddWithValue("@IMPORTO", oListArticoli(x).Calcolo.ImportoCalcolato)
+        '                MyCommand.Parameters.AddWithValue("@ID_PROVVEDIMENTO", IdProvvedimento)
+        '                MyCommand.Parameters.AddWithValue("@ID_LEGAME", oListArticoli(x).IdLegame)
+        '                Dim sValParametri As String = Utility.Costanti.GetValParamCmd(MyCommand)
+        '                Log.Debug("osapsetdicart->" + Costanti.LogQuery(MyCommand))
+        '                'eseguo la query
+        '                Dim DrReturn As SqlClient.SqlDataReader
+        '                DrReturn = MyDBManager.GetPrivateDataReaderCOMplus(MyCommand)
+        '                Do While DrReturn.Read
+        '                    myIdentity = DrReturn(0)
+        '                Loop
+        '                DrReturn.Close()
+
+        '                For y = 0 To oListArticoli(x).ListAgevolazioni.GetUpperBound(0)
+        '                    If Ambito = COSTANTValue.CostantiProv.AMBITO_DICHIARATO Then
+        '                        MyCommand.CommandText = "prc_SetDichiaratoVSAgevolazione"
+        '                    Else
+        '                        MyCommand.CommandText = "prc_SetAccertatoVSAgevolazione"
+        '                    End If
+        '                    MyCommand.Parameters.Clear()
+        '                    MyCommand.Parameters.AddWithValue("@IDARTICOLO", myIdentity)
+        '                    MyCommand.Parameters.AddWithValue("@IDAGEVOLAZIONE", oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
+        '                    'eseguo la query
+        '                    Log.Debug("osapsetdicartagev->" + Costanti.LogQuery(MyCommand))
+        '                    If MyDBManager.Execute(MyCommand) <> 1 Then
+        '                        Log.Debug("OSAP_SetDichiaratoListArticoli::errore in inserimento agevolazioni::procedure::" & MyCommand.CommandText & "::@IDARTICOLO" & myIdentity & "::@IDAGEVOLAZIONE::" & oListArticoli(x).ListAgevolazioni(y).IdAgevolazione)
+        '                    End If
+        '                Next
+        '            End If
+        '        Next
+        '        Return 1
+        '    Catch ex As Exception
+        '        Log.Debug("OSAP_SetDichiaratoListArticoli::si è verificato il seguenet errore::" & ex.Message)
+        '        Return 0
+        '    End Try
+        'End Function
         '*** ***
 #End Region
     End Class

@@ -1,7 +1,6 @@
 Imports System
 Imports System.EnterpriseServices
 Imports System.Diagnostics
-Imports RIBESFrameWork
 Imports System.Messaging
 Imports log4net
 Imports ComPlusInterface
@@ -19,7 +18,6 @@ Namespace COMPlusOPENgovProvvedimenti
         'RIBESFrameWork.Session (sessione del FrameWork
         '*******************************************************************
         Public m_objHashTable As Hashtable
-        Public m_objSession As RIBESFrameWork.Session
         Private Shared ReadOnly Log As ILog = LogManager.GetLogger(GetType(COMPlusBusinessObject))
 
 #Region "Gestione ITER LIQUIDAZIONI"

@@ -2,7 +2,6 @@ Imports System.Globalization
 Imports System
 Imports System.EnterpriseServices
 Imports System.Diagnostics
-Imports RIBESFrameWork
 Imports System.Configuration
 Imports System.Data
 Imports System.Data.SqlClient

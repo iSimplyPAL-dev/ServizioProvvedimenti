@@ -3,7 +3,6 @@ Imports System.Configuration
 Imports System.Data
 Imports System.EnterpriseServices
 Imports System.Data.SqlClient
-Imports RIBESFrameWork
 Imports log4net
 Imports ComPlusInterface
 Imports Utility
@@ -15,7 +14,6 @@ Namespace COMPlusOPENgovProvvedimenti
     Public Class DBOPENgovProvvedimentiSelect
         'Inherits ServicedComponent
 
-        Private objDBManager As DBManager
         Protected objUtility As New MotoreProvUtility
         Protected objdbIci As DBIci
         'Protected objdbCatasto As DBCatasto
@@ -79,129 +77,109 @@ Namespace COMPlusOPENgovProvvedimenti
 
         '    Return objDSDichiarazioniBonificate
         'End Function
-
+        ''' <summary>
+        ''' 
+        ''' </summary>
+        ''' <param name="StringConnectionProvv"></param>
+        ''' <param name="strANNO"></param>
+        ''' <param name="strCODTRIBUTO"></param>
+        ''' <param name="strCODENTE"></param>
+        ''' <param name="strCODTIPOPROVVEDIMENTO"></param>
+        ''' <param name="objHashTable"></param>
+        ''' <returns></returns>
         Public Function GetSogliaMinima(StringConnectionProvv As String, ByVal strANNO As String, ByVal strCODTRIBUTO As String, ByVal strCODENTE As String, ByVal strCODTIPOPROVVEDIMENTO As String, ByVal objHashTable As Hashtable) As Double
-
-            Dim sSQL As String
-
-            objDBManager = New DBManager
-            objConst = New COSTANTValue.CostantiProv
-            objUtility = New MotoreProvUtility
-
-            objDBManager.Initialize(StringConnectionProvv)
-
-            sSQL = "SELECT IMPORTO_MINIMO_ANNO "
-
-            sSQL += " FROM ANNI_PROVVEDIMENTI "
-
-            sSQL += " WHERE ANNI_PROVVEDIMENTI.COD_ENTE = '" & strCODENTE & "'"
-
-            If strCODTIPOPROVVEDIMENTO.CompareTo("-1") <> 0 And strCODTIPOPROVVEDIMENTO.CompareTo("") <> 0 Then
-                sSQL += "  and COD_TIPO_PROVVEDIMENTO = " & strCODTIPOPROVVEDIMENTO & ""
-            End If
-
-            If strCODTRIBUTO.CompareTo("-1") <> 0 And strCODTRIBUTO.CompareTo("") <> 0 Then
-                sSQL += "  and COD_TRIBUTO = '" & strCODTRIBUTO & "'"
-            End If
-
-            If strANNO.CompareTo("") <> 0 Then
-                sSQL += " and ANNO = '" & strANNO & "'"
-            End If
-
-            objDBManager.GetPrivateDataReaderCOMplus(sSQL)
-            Log.Debug("GetSogliaMinima->" + sSQL)
-            Dim result As SqlDataReader = objDBManager.GetPrivateDataReaderCOMplus(sSQL)
-            While result.Read()
-                GetSogliaMinima = result.Item("IMPORTO_MINIMO_ANNO")
-            End While
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
+            Try
+                Dim _oDbManager As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Dim sSQL As String = ""
+                Dim objDR As SqlClient.SqlDataReader
+                Using ctx As DBModel = _oDbManager
+                    sSQL = "SELECT IMPORTO_MINIMO_ANNO" _
+                        + " FROM ANNI_PROVVEDIMENTI" _
+                        + " WHERE 1=1" _
+                        + " AND COD_ENTE=@ENTE" _
+                        + " AND (COD_TRIBUTO<>'' OR COD_TRIBUTO=@COD_TRIBUTO)" _
+                        + " AND (ANNO<>'' OR ANNO=@ANNO)" _
+                        + " AND (COD_TIPO_PROVVEDIMENTO<=0 OR COD_TIPO_PROVVEDIMENTO=@COD_TIPO_PROVVEDIMENTO" _
+                        + " ORDER BY ID_TASK_REPOSITORY DESC,DATA_ELABORAZIONE DESC"
+                    objDR = ctx.GetDataReader(sSQL, ctx.GetParam("ENTE", strCODENTE) _
+                                , ctx.GetParam("COD_TRIBUTO", strCODTRIBUTO) _
+                                , ctx.GetParam("ANNO", strANNO) _
+                                , ctx.GetParam("COD_TIPO_PROVVEDIMENTO", strCODTIPOPROVVEDIMENTO)
+                            )
+                    While objDR.Read()
+                        GetSogliaMinima = StringOperation.FormatDouble(objDR("IMPORTO_MINIMO_ANNO"))
+                    End While
+                    objDR.Close()
+                    ctx.Dispose()
+                End Using
+            Catch Ex As Exception
+                Log.Error("DBOPENgovProvvedimentiSelect.GetSogliaMinima.Errore::" & Ex.Message)
+                GetSogliaMinima = 0
+            End Try
             Return GetSogliaMinima
-
         End Function
 
         Public Function GetSpese(StringConnectionProvv As String, ByVal strANNO As String, ByVal strCODTRIBUTO As String, ByVal strCODENTE As String, ByVal strCODTIPOPROVVEDIMENTO As String, ByVal objHashTable As Hashtable, ByVal fase As String) As Double
-            Dim strSQL As String
-
-            objDBManager = New DBManager
-            objConst = New COSTANTValue.CostantiProv
-            objUtility = New MotoreProvUtility
-
-
-            objDBManager.Initialize(StringConnectionProvv)
-
-
-            strSQL = " SELECT VALORE_VOCI.ANNO, VALORE_VOCI.VALORE"
-            strSQL += " FROM TIPO_VOCI INNER JOIN TIPO_MISURA ON TIPO_VOCI.MISURA = TIPO_MISURA.COD_MISURA INNER JOIN"
-            strSQL += " VALORE_VOCI ON TIPO_VOCI.COD_TRIBUTO = VALORE_VOCI.COD_TRIBUTO AND TIPO_VOCI.COD_CAPITOLO = VALORE_VOCI.COD_CAPITOLO And TIPO_VOCI.COD_VOCE = VALORE_VOCI.COD_VOCE"
-            strSQL += " AND TIPO_VOCI.COD_TIPO_PROVVEDIMENTO=VALORE_VOCI.COD_TIPO_PROVVEDIMENTO"
-
-            strSQL += " WHERE (TIPO_VOCI.COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
-            strSQL += " AND (TIPO_VOCI.FASE in (" & fase & "))  "
-            strSQL += " AND (valore_voci.cod_tipo_provvedimento=" & strCODTIPOPROVVEDIMENTO & ") and"
-            strSQL += " (TIPO_VOCI.COD_TRIBUTO = " & objUtility.CStrToDB(strCODTRIBUTO) & ") AND (TIPO_VOCI.COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "') AND (VALORE_VOCI.ANNO IN"
-            strSQL += "  (SELECT     MAX(anno)"
-            strSQL += " FROM VALORE_VOCI "
-            strSQL += " WHERE ANNO <=" & objUtility.CStrToDB(strANNO) & " AND (COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "')"
-            strSQL += " AND cod_ente=" & objUtility.CStrToDB(strCODENTE) & "))"
-
-            objDBManager.GetPrivateDataReaderCOMplus(strSQL)
-            Dim result As SqlDataReader = objDBManager.GetPrivateDataReaderCOMplus(strSQL)
-            While result.Read()
-                GetSpese = result.Item("VALORE")
-            End While
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-            End If
+            Try
+                Dim _oDbManager As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Dim sSQL As String = ""
+                Dim objDR As SqlClient.SqlDataReader
+                Using ctx As DBModel = _oDbManager
+                    sSQL = " SELECT VALORE_VOCI.ANNO, VALORE_VOCI.VALORE"
+                    sSQL += " FROM TIPO_VOCI INNER JOIN TIPO_MISURA ON TIPO_VOCI.MISURA = TIPO_MISURA.COD_MISURA INNER JOIN"
+                    sSQL += " VALORE_VOCI ON TIPO_VOCI.COD_TRIBUTO = VALORE_VOCI.COD_TRIBUTO AND TIPO_VOCI.COD_CAPITOLO = VALORE_VOCI.COD_CAPITOLO AND TIPO_VOCI.COD_VOCE = VALORE_VOCI.COD_VOCE"
+                    sSQL += " AND TIPO_VOCI.COD_TIPO_PROVVEDIMENTO=VALORE_VOCI.COD_TIPO_PROVVEDIMENTO"
+                    sSQL += " WHERE (TIPO_VOCI.COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
+                    sSQL += " AND (TIPO_VOCI.FASE IN (" & fase & "))  "
+                    sSQL += " AND (VALORE_VOCI.COD_TIPO_PROVVEDIMENTO=" & strCODTIPOPROVVEDIMENTO & ") AND"
+                    sSQL += " (TIPO_VOCI.COD_TRIBUTO = " & objUtility.CStrToDB(strCODTRIBUTO) & ") AND (TIPO_VOCI.COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "') AND (VALORE_VOCI.ANNO IN"
+                    sSQL += "  (SELECT MAX(ANNO)"
+                    sSQL += " FROM VALORE_VOCI "
+                    sSQL += " WHERE ANNO <=" & objUtility.CStrToDB(strANNO) & " AND (COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "')"
+                    sSQL += " AND COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & "))"
+                    objDR = ctx.GetDataReader(sSQL)
+                    While objDR.Read()
+                        GetSpese = StringOperation.FormatDouble(objDR("VALORE"))
+                    End While
+                    objDR.Close()
+                    ctx.Dispose()
+                End Using
+            Catch Ex As Exception
+                Log.Error("DBOPENgovProvvedimentiSelect.GetSpese.Errore::" & Ex.Message)
+                GetSpese = 0
+            End Try
             Return GetSpese
         End Function
 
         Public Function GetSpese(StringConnectionProvv As String, ByVal strANNO As String, ByVal strCODTRIBUTO As String, ByVal strCODENTE As String, ByVal strCODTIPOPROVVEDIMENTO As String, ByVal objHashTable As Hashtable) As Double
-            Dim strSQL As String
-
-            objDBManager = New DBManager
-            objConst = New COSTANTValue.CostantiProv
-            objUtility = New MotoreProvUtility
-
-
-            objDBManager.Initialize(StringConnectionProvv)
-
-
-            strSQL = " SELECT VALORE_VOCI.ANNO, VALORE_VOCI.VALORE"
-            strSQL += " FROM TIPO_VOCI INNER JOIN TIPO_MISURA ON TIPO_VOCI.MISURA = TIPO_MISURA.COD_MISURA INNER JOIN"
-            strSQL += " VALORE_VOCI ON TIPO_VOCI.COD_TRIBUTO = VALORE_VOCI.COD_TRIBUTO AND TIPO_VOCI.COD_CAPITOLO = VALORE_VOCI.COD_CAPITOLO And TIPO_VOCI.COD_VOCE = VALORE_VOCI.COD_VOCE"
-            strSQL += " AND TIPO_VOCI.COD_TIPO_PROVVEDIMENTO=VALORE_VOCI.COD_TIPO_PROVVEDIMENTO"
-
-            strSQL += " WHERE (TIPO_VOCI.COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
-            'strSQL += " AND (TIPO_VOCI.FASE in (" & fase & "))  "
-            strSQL += " AND (valore_voci.cod_tipo_provvedimento=" & strCODTIPOPROVVEDIMENTO & ") and"
-            strSQL += " (TIPO_VOCI.COD_TRIBUTO = " & objUtility.CStrToDB(strCODTRIBUTO) & ") AND (TIPO_VOCI.COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "') AND (VALORE_VOCI.ANNO IN"
-            strSQL += "  (SELECT     MAX(anno)"
-            strSQL += " FROM VALORE_VOCI "
-            strSQL += " WHERE ANNO <=" & objUtility.CStrToDB(strANNO) & " AND (COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "')"
-            strSQL += " AND cod_ente=" & objUtility.CStrToDB(strCODENTE) & "))"
-            objDBManager.GetPrivateDataReaderCOMplus(strSQL)
-
-            Dim result As SqlDataReader = objDBManager.GetPrivateDataReaderCOMplus(strSQL)
-            While result.Read()
-                GetSpese = FormatNumber(CType(result.Item("VALORE").Replace(",", "."), Double), 2)
-            End While
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
+            Try
+                Dim _oDbManager As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                Dim sSQL As String = ""
+                Dim objDR As SqlClient.SqlDataReader
+                Using ctx As DBModel = _oDbManager
+                    sSQL = " SELECT VALORE_VOCI.ANNO, VALORE_VOCI.VALORE"
+                    sSQL += " FROM TIPO_VOCI INNER JOIN TIPO_MISURA ON TIPO_VOCI.MISURA = TIPO_MISURA.COD_MISURA INNER JOIN"
+                    sSQL += " VALORE_VOCI ON TIPO_VOCI.COD_TRIBUTO = VALORE_VOCI.COD_TRIBUTO AND TIPO_VOCI.COD_CAPITOLO = VALORE_VOCI.COD_CAPITOLO AND TIPO_VOCI.COD_VOCE = VALORE_VOCI.COD_VOCE"
+                    sSQL += " AND TIPO_VOCI.COD_TIPO_PROVVEDIMENTO=VALORE_VOCI.COD_TIPO_PROVVEDIMENTO"
+                    sSQL += " WHERE (TIPO_VOCI.COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
+                    sSQL += " AND (VALORE_VOCI.COD_TIPO_PROVVEDIMENTO=" & strCODTIPOPROVVEDIMENTO & ") AND"
+                    sSQL += " (TIPO_VOCI.COD_TRIBUTO = " & objUtility.CStrToDB(strCODTRIBUTO) & ") AND (TIPO_VOCI.COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "') AND (VALORE_VOCI.ANNO IN"
+                    sSQL += "  (SELECT MAX(ANNO)"
+                    sSQL += " FROM VALORE_VOCI "
+                    sSQL += " WHERE ANNO <=" & objUtility.CStrToDB(strANNO) & " AND (COD_CAPITOLO = '" & OggettoAtto.Capitolo.Spese & "')"
+                    sSQL += " AND COD_ENTE=" & objUtility.CStrToDB(strCODENTE) & "))"
+                    objDR = ctx.GetDataReader(sSQL)
+                    While objDR.Read()
+                        GetSpese = FormatNumber(StringOperation.FormatDouble(objDR("VALORE")), 2)
+                    End While
+                    objDR.Close()
+                    ctx.Dispose()
+                End Using
+            Catch Ex As Exception
+                Log.Error("DBOPENgovProvvedimentiSelect.GetSpese.Errore::" & Ex.Message)
+                GetSpese = 0
+            End Try
             Return GetSpese
-
         End Function
 #End Region
         '<AutoComplete()> Public Function getNewIDdbICI(StringConnectionProvv As String, ByVal strNomeTabella As String, ByVal objHashTable As Hashtable) As Long
@@ -213,15 +191,15 @@ Namespace COMPlusOPENgovProvvedimenti
         '        objConst = New COSTANTValue.CostantiProv
         '        objUtility = New MotoreProvUtility
 
-        '        Dim strSQL As String
+        '        Dim sSQL As String
         '        Dim dr As SqlDataReader
         '        Dim lngMaxId As Long
         '        Dim intRetVal As Integer
         '        Log.Debug("inizio getnewid")
         '        'objDBManager.Initialize(StringConnectionICI)
 
-        '        strSQL = "SELECT MAXID FROM CONTATORI  WHERE NOME_TABELLA =" & objUtility.CStrToDB(strNomeTabella)
-        '        'dr = objDBManager.GetPrivateDataReaderCOMplus(strSQL)
+        '        sSQL = "SELECT MAXID FROM CONTATORI  WHERE NOME_TABELLA =" & objUtility.CStrToDB(strNomeTabella)
+        '        'dr = objDBManager.GetPrivateDataReaderCOMplus(sSQL)
         '        'If dr.Read Then
         '        '    lngMaxId = dr.Item("MAXID")
         '        '    lngMaxId = lngMaxId + objConst.VALUE_INCREMENT
@@ -233,7 +211,7 @@ Namespace COMPlusOPENgovProvvedimenti
 
         '        cmdMyCommand.CommandType = CommandType.Text
         '        cmdMyCommand.Parameters.Clear()
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        myAdapter.SelectCommand = cmdMyCommand
         '        myAdapter.Fill(myDataSet, "NEWID")
         '        myAdapter.Dispose()
@@ -246,11 +224,11 @@ Namespace COMPlusOPENgovProvvedimenti
         '        End If
         '        Log.Debug("prelevato getnewid")
 
-        '        strSQL = "UPDATE CONTATORI SET MAXID=" & lngMaxId & " WHERE NOME_TABELLA ='" & strNomeTabella & "'"
-        '        cmdMyCommand.CommandText = strSQL
+        '        sSQL = "UPDATE CONTATORI SET MAXID=" & lngMaxId & " WHERE NOME_TABELLA ='" & strNomeTabella & "'"
+        '        cmdMyCommand.CommandText = sSQL
         '        cmdMyCommand.ExecuteNonQuery()
         '        Log.Debug("aggiornato getnewid")
-        '        'objDBManager.Execute(strSQL)
+        '        'objDBManager.Execute(sSQL)
         '        'If intRetVal = objConst.INIT_VALUE_NUMBER Then
         '        '    If Not IsNothing(objDBManager) Then
         '        '        objDBManager.Kill()
@@ -284,18 +262,18 @@ Namespace COMPlusOPENgovProvvedimenti
                 objConst = New COSTANTValue.CostantiProv
                 objUtility = New MotoreProvUtility
 
-                Dim strSQL As String = ""
+                Dim sSQL As String = ""
                 Dim dr As SqlDataReader
                 Dim lngMaxId As Long
                 Dim intRetVal As Integer
                 Log.Debug("inizio getnewid")
-                'strSQL = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED "
-                strSQL += "SELECT MAXID FROM CONTATORI WHERE NOME_TABELLA =" & objUtility.CStrToDB(strNomeTabella)
-                Log.Debug("query::" & strSQL)
+                'sSQL = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED "
+                sSQL += "SELECT MAXID FROM CONTATORI WHERE NOME_TABELLA =" & objUtility.CStrToDB(strNomeTabella)
+                Log.Debug("query::" & sSQL)
                 cmdMyCommand.Connection = New SqlConnection(myStringConnection)
                 cmdMyCommand.CommandTimeout = 0
                 cmdMyCommand.Connection.Open()
-                cmdMyCommand.CommandText = strSQL
+                cmdMyCommand.CommandText = sSQL
                 Log.Debug("getNewID::query:: " & cmdMyCommand.CommandText & " ::param:: " & Utility.Costanti.GetValParamCmd(cmdMyCommand))
                 dr = cmdMyCommand.ExecuteReader()
                 If dr.Read Then
@@ -304,8 +282,8 @@ Namespace COMPlusOPENgovProvvedimenti
                 End If
                 dr.Close()
                 Log.Debug("devo aggiornare getnewid")
-                strSQL = "UPDATE CONTATORI SET MAXID=" & lngMaxId & " WHERE NOME_TABELLA ='" & strNomeTabella & "'"
-                cmdMyCommand.CommandText = strSQL
+                sSQL = "UPDATE CONTATORI SET MAXID=" & lngMaxId & " WHERE NOME_TABELLA ='" & strNomeTabella & "'"
+                cmdMyCommand.CommandText = sSQL
                 cmdMyCommand.ExecuteNonQuery()
                 If intRetVal = objConst.INIT_VALUE_NUMBER Then
                     Log.Error("Application::COMPlusOPENgovProvvedimenti::Function::getNewID::DBOPENgovProvvedimentiSelect")
@@ -324,16 +302,12 @@ Namespace COMPlusOPENgovProvvedimenti
         <AutoComplete()>
         Public Function getNewNumeroAtto(StringConnectionProvv As String, ByVal objHashTable As Hashtable) As String
             Try
-                objDBManager = New DBManager
                 objConst = New COSTANTValue.CostantiProv
                 objUtility = New MotoreProvUtility
 
                 Dim ANNO, COD_ENTE As String
-
                 Dim ANNOELABORAZIONE As String
-
-
-                Dim strSQL As String
+                Dim sSQL As String
                 Dim dr As SqlDataReader
                 Dim iNUMERO_ATTO As Integer = -1
                 Dim sNUMERO_ATTO As String = "-1"
@@ -343,55 +317,42 @@ Namespace COMPlusOPENgovProvvedimenti
 
                 ANNOELABORAZIONE = objHashTable("ANNOELABORAZIONE")
 
-                objDBManager.Initialize(StringConnectionProvv)
-
-                strSQL = "select * from TblNumeroAtto "
-                strSQL += " where COD_ENTE='" & COD_ENTE & "'"
-                'strSQL += " and ANNO='" & ANNO & "'"
-
-                '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
-                strSQL += " and ANNO='" & ANNOELABORAZIONE & "'"
-
-
-                dr = objDBManager.GetPrivateDataReaderCOMplus(strSQL)
-
-                If dr.HasRows Then
-                    'riga trovata 
-                    'aumento di 1 il valore trovato e lo restituisco in output
-                    dr.Read()
-                    iNUMERO_ATTO = dr.Item("NUMERO_ATTO") + 1
-                    strSQL = "update TblNumeroAtto set NUMERO_ATTO=" & iNUMERO_ATTO
-                    strSQL += " where COD_ENTE='" & COD_ENTE & "'"
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    sSQL = "SELECT * FROM TBLNUMEROATTO "
+                    sSQL += " WHERE COD_ENTE='" & COD_ENTE & "'"
                     '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
-                    'strSQL += " and ANNO='" & ANNO & "'"
-                    strSQL += " and ANNO='" & ANNOELABORAZIONE & "'"
+                    sSQL += " AND ANNO='" & ANNOELABORAZIONE & "'"
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    dr = ctx.GetDataReader(sSQL)
+                    If dr.HasRows Then
+                        'riga trovata 
+                        'aumento di 1 il valore trovato e lo restituisco in output
+                        dr.Read()
+                        iNUMERO_ATTO = dr.Item("NUMERO_ATTO") + 1
+                        sSQL = "UPDATE TBLNUMEROATTO SET NUMERO_ATTO=" & iNUMERO_ATTO
+                        sSQL += " WHERE COD_ENTE='" & COD_ENTE & "'"
+                        '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+                        sSQL += " and ANNO='" & ANNOELABORAZIONE & "'"
+                        ctx.ExecuteNonQuery(sSQL)
+                    Else
+                        'riga non trovata 
+                        'inserisco nuovo valore (1) e lo restituisco in output
+                        iNUMERO_ATTO = 1
+                        sSQL = "INSERT INTO TBLNUMEROATTO (NUMERO_ATTO,COD_ENTE,ANNO)"
+                        sSQL += " VALUES("
+                        sSQL += "" & iNUMERO_ATTO & ","
+                        sSQL += "'" & COD_ENTE & "',"
+                        '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+                        sSQL += "'" & ANNOELABORAZIONE & "'"
+                        sSQL += " )"
+                        ctx.ExecuteNonQuery(sSQL)
+                    End If
 
-                    objDBManager.Execute(strSQL)
-                Else
-                    'riga non trovata 
-                    'inserisco nuovo valore (1) e lo restituisco in output
-                    iNUMERO_ATTO = 1
-                    strSQL = "insert into TblNumeroAtto "
-                    strSQL += "(NUMERO_ATTO,COD_ENTE,ANNO)"
-                    strSQL += " values("
-                    strSQL += "" & iNUMERO_ATTO & ","
-                    strSQL += "'" & COD_ENTE & "',"
-                    '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
-                    'strSQL += "'" & ANNO & "'"
-                    strSQL += "'" & ANNOELABORAZIONE & "'"
-                    strSQL += " )"
-                    objDBManager.Execute(strSQL)
-                End If
-
-                dr.Close()
-
+                    dr.Close()
+                    ctx.Dispose()
+                End Using
 
                 If iNUMERO_ATTO = objConst.INIT_VALUE_NUMBER Then
-                    If Not IsNothing(objDBManager) Then
-                        objDBManager.Kill()
-                        objDBManager.Dispose()
-
-                    End If
                     Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::getNewNumeroAtto::DBOPENgovProvvedimentiSelect")
                 End If
 
@@ -399,22 +360,108 @@ Namespace COMPlusOPENgovProvvedimenti
                 LUNGHEZZA_STRINGA_ATTO = CType(ConfigurationSettings.AppSettings("LUNGHEZZA_STRINGA_ATTO").ToString, Integer)
 
                 '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
-
-                'sNUMERO_ATTO = Right(objHashTable("ANNO"), 2) & "/" & CType(iNUMERO_ATTO, String).PadLeft(LUNGHEZZA_STRINGA_ATTO, "0")
                 sNUMERO_ATTO = Right(objHashTable("ANNOELABORAZIONE"), 2) & "/" & CType(iNUMERO_ATTO, String).PadLeft(LUNGHEZZA_STRINGA_ATTO, "0")
 
                 Return sNUMERO_ATTO
 
             Catch ex As Exception
                 Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::getNewNumeroAtto::DBOPENgovProvvedimentiSelect:: " & ex.Message)
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
             End Try
         End Function
+        '<AutoComplete()>
+        'Public Function getNewNumeroAtto(StringConnectionProvv As String, ByVal objHashTable As Hashtable) As String
+        '    Try
+        '        objDBManager = New DBManager
+        '        objConst = New COSTANTValue.CostantiProv
+        '        objUtility = New MotoreProvUtility
+
+        '        Dim ANNO, COD_ENTE As String
+
+        '        Dim ANNOELABORAZIONE As String
+
+
+        '        Dim sSQL As String
+        '        Dim dr As SqlDataReader
+        '        Dim iNUMERO_ATTO As Integer = -1
+        '        Dim sNUMERO_ATTO As String = "-1"
+
+        '        ANNO = objHashTable("ANNO")
+        '        COD_ENTE = objHashTable("COD_ENTE")
+
+        '        ANNOELABORAZIONE = objHashTable("ANNOELABORAZIONE")
+
+        '        objDBManager.Initialize(StringConnectionProvv)
+
+        '        sSQL = "select * from TblNumeroAtto "
+        '        sSQL += " where COD_ENTE='" & COD_ENTE & "'"
+        '        'sSQL += " and ANNO='" & ANNO & "'"
+
+        '        '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+        '        sSQL += " and ANNO='" & ANNOELABORAZIONE & "'"
+
+
+        '        dr = objDBManager.GetPrivateDataReaderCOMplus(sSQL)
+
+        '        If dr.HasRows Then
+        '            'riga trovata 
+        '            'aumento di 1 il valore trovato e lo restituisco in output
+        '            dr.Read()
+        '            iNUMERO_ATTO = dr.Item("NUMERO_ATTO") + 1
+        '            sSQL = "update TblNumeroAtto set NUMERO_ATTO=" & iNUMERO_ATTO
+        '            sSQL += " where COD_ENTE='" & COD_ENTE & "'"
+        '            '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+        '            'sSQL += " and ANNO='" & ANNO & "'"
+        '            sSQL += " and ANNO='" & ANNOELABORAZIONE & "'"
+
+        '            objDBManager.Execute(sSQL)
+        '        Else
+        '            'riga non trovata 
+        '            'inserisco nuovo valore (1) e lo restituisco in output
+        '            iNUMERO_ATTO = 1
+        '            sSQL = "insert into TblNumeroAtto "
+        '            sSQL += "(NUMERO_ATTO,COD_ENTE,ANNO)"
+        '            sSQL += " values("
+        '            sSQL += "" & iNUMERO_ATTO & ","
+        '            sSQL += "'" & COD_ENTE & "',"
+        '            '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+        '            'sSQL += "'" & ANNO & "'"
+        '            sSQL += "'" & ANNOELABORAZIONE & "'"
+        '            sSQL += " )"
+        '            objDBManager.Execute(sSQL)
+        '        End If
+
+        '        dr.Close()
+
+
+        '        If iNUMERO_ATTO = objConst.INIT_VALUE_NUMBER Then
+        '            If Not IsNothing(objDBManager) Then
+        '                objDBManager.Kill()
+        '                objDBManager.Dispose()
+
+        '            End If
+        '            Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::getNewNumeroAtto::DBOPENgovProvvedimentiSelect")
+        '        End If
+
+        '        Dim LUNGHEZZA_STRINGA_ATTO As Integer
+        '        LUNGHEZZA_STRINGA_ATTO = CType(ConfigurationSettings.AppSettings("LUNGHEZZA_STRINGA_ATTO").ToString, Integer)
+
+        '        '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
+
+        '        'sNUMERO_ATTO = Right(objHashTable("ANNO"), 2) & "/" & CType(iNUMERO_ATTO, String).PadLeft(LUNGHEZZA_STRINGA_ATTO, "0")
+        '        sNUMERO_ATTO = Right(objHashTable("ANNOELABORAZIONE"), 2) & "/" & CType(iNUMERO_ATTO, String).PadLeft(LUNGHEZZA_STRINGA_ATTO, "0")
+
+        '        Return sNUMERO_ATTO
+
+        '    Catch ex As Exception
+        '        Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::getNewNumeroAtto::DBOPENgovProvvedimentiSelect:: " & ex.Message)
+        '    Finally
+        '        If Not IsNothing(objDBManager) Then
+        '            objDBManager.Kill()
+        '            objDBManager.Dispose()
+
+        '        End If
+        '    End Try
+        'End Function
         <AutoComplete()> Public Function getAnagraficaIndirizziSpedizione(DBType As String, ByVal strCodContribuente As String, ByVal strCodTributo As String, ByVal myStringConnection As String) As DataSet
             Dim sSQL As String
             Dim myDataSet As New DataSet
@@ -667,35 +714,35 @@ Namespace COMPlusOPENgovProvvedimenti
             End Try
             Return dsMyDati
         End Function
-        <AutoComplete()>
-        Public Function GetTipologiaInteressiICI(ByVal strANNO As String, ByVal strCODENTE As String, ByVal myStringConnection As String) As DataSet
-            Dim objDSGetTipologiaInteressi As DataSet = Nothing
-            Dim strSQL As String
-            Dim objDA As SqlDataAdapter
-            objUtility = New MotoreProvUtility
+        '<AutoComplete()>
+        'Public Function GetTipologiaInteressiICI(ByVal strANNO As String, ByVal strCODENTE As String, ByVal myStringConnection As String) As DataSet
+        '    Dim objDSGetTipologiaInteressi As DataSet = Nothing
+        '    Dim sSQL As String
+        '    Dim objDA As SqlDataAdapter
+        '    objUtility = New MotoreProvUtility
 
-            strSQL = " SELECT INT_ACCONTO_SALDO, INT_SALDO"
-            strSQL += " FROM TP_GENERALE_ICI"
-            strSQL += " WHERE (COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
-            strSQL += " AND (ANNO = " & objUtility.CStrToDB(strANNO) & ")"
+        '    sSQL = " SELECT INT_ACCONTO_SALDO, INT_SALDO"
+        '    sSQL += " FROM TP_GENERALE_ICI"
+        '    sSQL += " WHERE (COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
+        '    sSQL += " AND (ANNO = " & objUtility.CStrToDB(strANNO) & ")"
 
-            objDSGetTipologiaInteressi = New DataSet
-            objDBManager = New DBManager
+        '    objDSGetTipologiaInteressi = New DataSet
+        '    objDBManager = New DBManager
 
-            objDBManager.Initialize(myStringConnection)
-            Log.Debug("GET_TIPOLOGIA_INTERESSI::SQL::" & strSQL)
-            objDA = objDBManager.GetPrivateDataAdapter(strSQL)
-            objDA.Fill(objDSGetTipologiaInteressi, "GET_TIPOLOGIA_INTERESSI")
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-            End If
-            Return objDSGetTipologiaInteressi
-        End Function
+        '    objDBManager.Initialize(myStringConnection)
+        '    Log.Debug("GET_TIPOLOGIA_INTERESSI::SQL::" & sSQL)
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
+        '    objDA.Fill(objDSGetTipologiaInteressi, "GET_TIPOLOGIA_INTERESSI")
+        '    If Not IsNothing(objDBManager) Then
+        '        objDBManager.Kill()
+        '        objDBManager.Dispose()
+        '    End If
+        '    Return objDSGetTipologiaInteressi
+        'End Function
         '<AutoComplete()>
         'Public Function GetTipologiaInteressiTARSU(ByVal strANNO As String, ByVal CodTributo As String, ByVal strCODENTE As String, myStringConnection As String) As DataSet
         '    Dim objDSGetTipologiaInteressiTARSU As DataSet = Nothing
-        '    'Dim strSQL As String
+        '    'Dim sSQL As String
         '    Dim objDA As SqlDataAdapter
         '    Try
         '        objUtility = New MotoreProvUtility
@@ -706,11 +753,11 @@ Namespace COMPlusOPENgovProvvedimenti
         '        objDBManager.Initialize(myStringConnection)
 
         '        '*** 20130801 - accertamento OSAP ***
-        '        'strSQL = " SELECT DATA_SCADENZA"
-        '        'strSQL += " FROM TAB_SCADENZA_INTERESSI"
-        '        'strSQL += " WHERE (COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
-        '        'strSQL += " AND (ANNO = " & objUtility.CStrToDB(strANNO) & ")"
-        '        'objDA = objDBManager.GetPrivateDataAdapter(strSQL)
+        '        'sSQL = " SELECT DATA_SCADENZA"
+        '        'sSQL += " FROM TAB_SCADENZA_INTERESSI"
+        '        'sSQL += " WHERE (COD_ENTE = " & objUtility.CStrToDB(strCODENTE) & ") "
+        '        'sSQL += " AND (ANNO = " & objUtility.CStrToDB(strANNO) & ")"
+        '        'objDA = objDBManager.GetPrivateDataAdapter(sSQL)
         '        Dim cmdMyCommand As New SqlCommand
         '        cmdMyCommand.Connection = New SqlConnection(myStringConnection)
         '        cmdMyCommand.CommandType = CommandType.StoredProcedure
@@ -740,8 +787,8 @@ Namespace COMPlusOPENgovProvvedimenti
             Log.Debug("getATTIRicercaSemplice::inizio")
 
             Dim objDSATTIRicercaSemplice As DataSet = Nothing
-            Dim strSQL As String
-            Dim objDA As SqlDataAdapter
+            Dim sSQL As String
+            Dim objDA As New SqlDataAdapter
             objUtility = New MotoreProvUtility
             Dim strNumeroAvviso As String = ""
             Dim strNumeroAtto As String = ""
@@ -752,60 +799,118 @@ Namespace COMPlusOPENgovProvvedimenti
 
             Dim strCOD_TRIBUTO As String = ""
 
-            'strNumeroAvviso = CType(objHashTable("NUMEROPROVVEDIMENTO"), String)
-            strNumeroAtto = CType(objHashTable("NUMEROPROVVEDIMENTO"), String)
-            strCOD_TRIBUTO = CType(objHashTable("CODTRIBUTO"), String)
+            Try
+                strNumeroAtto = CType(objHashTable("NUMEROPROVVEDIMENTO"), String)
+                strCOD_TRIBUTO = CType(objHashTable("CODTRIBUTO"), String)
 
-            strCognome = objUtility.CToStr(objHashTable("COGNOME"))
-            strNome = objUtility.CToStr(objHashTable("NOME"))
-            strCodiceFiscale = objUtility.CToStr(objHashTable("CODICEFISCALE"))
-            strPartitaIVA = objUtility.CToStr(objHashTable("PARTITAIVA"))
-
-
-            strSQL = "SELECT DISTINCT COD_CONTRIBUENTE, NOMINATIVO, CODICE_FISCALE, PARTITA_IVA"
-            strSQL += " FROM V_GETATTIRICERCASEMPLICE"
-            strSQL += " WHERE (COD_ENTE='" & strCOD_ENTE & "')"
-            If Trim(strCognome) <> "" Then
-                strSQL += " AND (COGNOME LIKE '" & Replace(Replace(Trim(strCognome), "'", "''"), "*", "%") & "%')"
-            End If
-            If Trim(strNome) <> "" Then
-                strSQL += " AND (NOME LIKE '" & Replace(Replace(Trim(strNome), "'", "''"), "*", "%") & "%')"
-            End If
-            If Trim(strCodiceFiscale) <> "" Then
-                strSQL += " AND (CODICE_FISCALE LIKE '" & Replace(Trim(strCodiceFiscale), "*", "%") & "%')"
-            End If
-            If Trim(strPartitaIVA) <> "" Then
-                strSQL += " AND (PARTITA_IVA LIKE '" & Replace(Trim(strPartitaIVA), "*", "%") & "%')"
-            End If
-            If Len(strNumeroAtto) > 0 Then
-                strSQL += "AND (NUMERO_ATTO=" & objUtility.CStrToDB(strNumeroAtto) & ")"
-            End If
-            If strCOD_TRIBUTO <> "-1" And strCOD_TRIBUTO <> "" Then
-                strSQL += " AND (COD_TRIBUTO='" & strCOD_TRIBUTO & "')"
-            End If
-            strSQL += " ORDER BY NOMINATIVO"
-
-            objDSATTIRicercaSemplice = New DataSet
-            objDBManager = New DBManager
-
-            objDBManager.Initialize(StringConnectionProvv)
-
-            Log.Debug("getATTIRicercaSemplice::SQL::" & strSQL)
-
-            objDA = objDBManager.GetPrivateDataAdapter(strSQL)
-
-            objDA.Fill(objDSATTIRicercaSemplice, "TP_ATTI_RICERCA_SEMPLICE")
-
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
+                strCognome = objUtility.CToStr(objHashTable("COGNOME"))
+                strNome = objUtility.CToStr(objHashTable("NOME"))
+                strCodiceFiscale = objUtility.CToStr(objHashTable("CODICEFISCALE"))
+                strPartitaIVA = objUtility.CToStr(objHashTable("PARTITAIVA"))
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    sSQL = "SELECT DISTINCT COD_CONTRIBUENTE, NOMINATIVO, CODICE_FISCALE, PARTITA_IVA"
+                    sSQL += " FROM V_GETATTIRICERCASEMPLICE"
+                    sSQL += " WHERE (COD_ENTE='" & strCOD_ENTE & "')"
+                    If Trim(strCognome) <> "" Then
+                        sSQL += " AND (COGNOME LIKE '" & Replace(Replace(Trim(strCognome), "'", "''"), "*", "%") & "%')"
+                    End If
+                    If Trim(strNome) <> "" Then
+                        sSQL += " AND (NOME LIKE '" & Replace(Replace(Trim(strNome), "'", "''"), "*", "%") & "%')"
+                    End If
+                    If Trim(strCodiceFiscale) <> "" Then
+                        sSQL += " AND (CODICE_FISCALE LIKE '" & Replace(Trim(strCodiceFiscale), "*", "%") & "%')"
+                    End If
+                    If Trim(strPartitaIVA) <> "" Then
+                        sSQL += " AND (PARTITA_IVA LIKE '" & Replace(Trim(strPartitaIVA), "*", "%") & "%')"
+                    End If
+                    If Len(strNumeroAtto) > 0 Then
+                        sSQL += "AND (NUMERO_ATTO=" & objUtility.CStrToDB(strNumeroAtto) & ")"
+                    End If
+                    If strCOD_TRIBUTO <> "-1" And strCOD_TRIBUTO <> "" Then
+                        sSQL += " AND (COD_TRIBUTO='" & strCOD_TRIBUTO & "')"
+                    End If
+                    sSQL += " ORDER BY NOMINATIVO"
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDSATTIRicercaSemplice = ctx.GetDataSet(sSQL, "TP_ATTI_RICERCA_SEMPLICE")
+                    ctx.Dispose()
+                End Using
+            Catch ex As Exception
+                Log.Debug("getAttiRicercaSemplice::si è verificato il seguente errore::", ex)
+                objDSATTIRicercaSemplice = Nothing
+            End Try
             Return objDSATTIRicercaSemplice
-
         End Function
+        '<AutoComplete()>
+        'Public Function getATTIRicercaSemplice(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable) As DataSet
+        '    Log.Debug("getATTIRicercaSemplice::inizio")
+
+        '    Dim objDSATTIRicercaSemplice As DataSet = Nothing
+        '    Dim sSQL As String
+        '    Dim objDA As SqlDataAdapter
+        '    objUtility = New MotoreProvUtility
+        '    Dim strNumeroAvviso As String = ""
+        '    Dim strNumeroAtto As String = ""
+        '    Dim strCognome As String
+        '    Dim strNome As String
+        '    Dim strCodiceFiscale As String
+        '    Dim strPartitaIVA As String
+
+        '    Dim strCOD_TRIBUTO As String = ""
+
+        '    'strNumeroAvviso = CType(objHashTable("NUMEROPROVVEDIMENTO"), String)
+        '    strNumeroAtto = CType(objHashTable("NUMEROPROVVEDIMENTO"), String)
+        '    strCOD_TRIBUTO = CType(objHashTable("CODTRIBUTO"), String)
+
+        '    strCognome = objUtility.CToStr(objHashTable("COGNOME"))
+        '    strNome = objUtility.CToStr(objHashTable("NOME"))
+        '    strCodiceFiscale = objUtility.CToStr(objHashTable("CODICEFISCALE"))
+        '    strPartitaIVA = objUtility.CToStr(objHashTable("PARTITAIVA"))
+
+
+        '    sSQL = "SELECT DISTINCT COD_CONTRIBUENTE, NOMINATIVO, CODICE_FISCALE, PARTITA_IVA"
+        '    sSQL += " FROM V_GETATTIRICERCASEMPLICE"
+        '    sSQL += " WHERE (COD_ENTE='" & strCOD_ENTE & "')"
+        '    If Trim(strCognome) <> "" Then
+        '        sSQL += " AND (COGNOME LIKE '" & Replace(Replace(Trim(strCognome), "'", "''"), "*", "%") & "%')"
+        '    End If
+        '    If Trim(strNome) <> "" Then
+        '        sSQL += " AND (NOME LIKE '" & Replace(Replace(Trim(strNome), "'", "''"), "*", "%") & "%')"
+        '    End If
+        '    If Trim(strCodiceFiscale) <> "" Then
+        '        sSQL += " AND (CODICE_FISCALE LIKE '" & Replace(Trim(strCodiceFiscale), "*", "%") & "%')"
+        '    End If
+        '    If Trim(strPartitaIVA) <> "" Then
+        '        sSQL += " AND (PARTITA_IVA LIKE '" & Replace(Trim(strPartitaIVA), "*", "%") & "%')"
+        '    End If
+        '    If Len(strNumeroAtto) > 0 Then
+        '        sSQL += "AND (NUMERO_ATTO=" & objUtility.CStrToDB(strNumeroAtto) & ")"
+        '    End If
+        '    If strCOD_TRIBUTO <> "-1" And strCOD_TRIBUTO <> "" Then
+        '        sSQL += " AND (COD_TRIBUTO='" & strCOD_TRIBUTO & "')"
+        '    End If
+        '    sSQL += " ORDER BY NOMINATIVO"
+
+        '    objDSATTIRicercaSemplice = New DataSet
+        '    objDBManager = New DBManager
+
+        '    objDBManager.Initialize(StringConnectionProvv)
+
+        '    Log.Debug("getATTIRicercaSemplice::SQL::" & sSQL)
+
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
+
+        '    objDA.Fill(objDSATTIRicercaSemplice, "TP_ATTI_RICERCA_SEMPLICE")
+
+
+        '    If Not IsNothing(objDBManager) Then
+        '        objDBManager.Kill()
+        '        objDBManager.Dispose()
+
+        '    End If
+
+        '    Return objDSATTIRicercaSemplice
+
+        'End Function
 
         '*** 201810 - Generazione Massiva Atti ***
 
@@ -848,85 +953,57 @@ Namespace COMPlusOPENgovProvvedimenti
 
         Public Function getImmobiliDichiaratiPerStampaAccertamenti(StringConnectionProvv As String, ByVal objHashTable As Hashtable, ByVal ID_PROCEDIMENTO As Long) As DataSet
 
-            Dim strSQL As String
-
-
-            Dim objDS As DataSet = Nothing
-            Dim objDA As SqlDataAdapter
+            Dim sSQL As String
+            Dim objDS As New DataSet
             objUtility = New MotoreProvUtility
-
-            strSQL = "SELECT *"
-            strSQL += " FROM V_GETICIIMMOBILIDICHIARATIXSTAMPA"
-            strSQL += " WHERE ID_PROCEDIMENTO = " & ID_PROCEDIMENTO
-            objDS = New DataSet
-            objDBManager = New DBManager
-            Log.Debug("DBOPENgovProvvedimentiSelect.getImmobiliDichiaratiPerStampaAccertamenti.QUERY::" + strSQL)
-            objDBManager.Initialize(StringConnectionProvv)
-
-            objDA = objDBManager.GetPrivateDataAdapter(strSQL)
-
-            objDA.Fill(objDS, "IMMO_DICH_PER_STAMPA_ACCERTAMENTO")
-
-
-            If Not IsNothing(objDBManager) Then
-                objDBManager.Kill()
-                objDBManager.Dispose()
-
-            End If
-
-
+            Try
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    sSQL = "SELECT *"
+                    sSQL += " FROM V_GETICIIMMOBILIDICHIARATIXSTAMPA"
+                    sSQL += " WHERE ID_PROCEDIMENTO = " & ID_PROCEDIMENTO
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDS = ctx.GetDataSet(sSQL, "IMMO_DICH_PER_STAMPA_ACCERTAMENTO")
+                    ctx.Dispose()
+                End Using
+            Catch ex As Exception
+                Log.Debug("getImmobiliDichiaratiPerStampaAccertamenti::si è verificato il seguente errore::", ex)
+                objDS = Nothing
+            End Try
             Return objDS
-
         End Function
 
         Public Function getImmobiliDichiaratiPerStampaAccertamentiTARSU(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal ID_PROVVEDIMENTO As Long) As DataSet
 
-            Dim strSQL As String
+            Dim sSQL As String
 
             Dim NomeDbTarsu As String
             NomeDbTarsu = objUtility.CToStr(objHashTable("NomeDbTarsu"))
             Dim strCOD_CONTRIBUENTE As String = objUtility.CToStr(objHashTable("COD_CONTRIBUENTE"))
 
             Dim objDS As DataSet = Nothing
-            Dim objDA As SqlDataAdapter
             objUtility = New MotoreProvUtility
 
             Try
-                strSQL = "Select * "
-                strSQL += " FROM TBLRUOLODICHIARATO INNER JOIN " & NomeDbTarsu & ".dbo.TBLTARIFFE On "
-                strSQL += " TBLRUOLODICHIARATO.IDCATEGORIA = " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDCATEGORIA COLLATE Latin1_General_CI_AS And "
-                strSQL += " TBLRUOLODICHIARATO.IDENTE = " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDENTE COLLATE Latin1_General_CI_AS And "
-                strSQL += " TBLRUOLODICHIARATO.ANNO = " & NomeDbTarsu & ".dbo.TBLTARIFFE.ANNO COLLATE SQL_Latin1_General_CP1_CI_AS INNER JOIN"
-                strSQL += " " & NomeDbTarsu & ".dbo.TBLCATEGORIE On "
-                strSQL += " " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDCATEGORIA = " & NomeDbTarsu & ".dbo.TBLCATEGORIE.CODICE And "
-                strSQL += " " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDENTE = " & NomeDbTarsu & ".dbo.TBLCATEGORIE.IDENTE"
-                strSQL += " WHERE (TBLRUOLODICHIARATO.ID_PROVVEDIMENTO = " & ID_PROVVEDIMENTO & ")"
-
-                objDS = New DataSet
-                objDBManager = New DBManager
-
-                objDBManager.Initialize(StringConnectionProvv)
-
-                objDA = objDBManager.GetPrivateDataAdapter(strSQL)
-
-                Log.Debug("Query getImmobiliDichiaratiPerStampaAccertamentiTARSU::" & strSQL)
-                Log.Warn("Query getImmobiliDichiaratiPerStampaAccertamentiTARSU::" & strSQL)
-
-                objDA.Fill(objDS, "IMMO_DICH_PER_STAMPA_ACCERTAMENTO")
-
-                Return objDS
-
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    sSQL = "SELECT * "
+                    sSQL += " FROM TBLRUOLODICHIARATO INNER JOIN " & NomeDbTarsu & ".dbo.TBLTARIFFE On "
+                    sSQL += " TBLRUOLODICHIARATO.IDCATEGORIA = " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDCATEGORIA COLLATE Latin1_General_CI_AS And "
+                    sSQL += " TBLRUOLODICHIARATO.IDENTE = " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDENTE COLLATE Latin1_General_CI_AS And "
+                    sSQL += " TBLRUOLODICHIARATO.ANNO = " & NomeDbTarsu & ".dbo.TBLTARIFFE.ANNO COLLATE SQL_Latin1_General_CP1_CI_AS INNER JOIN"
+                    sSQL += " " & NomeDbTarsu & ".dbo.TBLCATEGORIE On "
+                    sSQL += " " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDCATEGORIA = " & NomeDbTarsu & ".dbo.TBLCATEGORIE.CODICE And "
+                    sSQL += " " & NomeDbTarsu & ".dbo.TBLTARIFFE.IDENTE = " & NomeDbTarsu & ".dbo.TBLCATEGORIE.IDENTE"
+                    sSQL += " WHERE (TBLRUOLODICHIARATO.ID_PROVVEDIMENTO = " & ID_PROVVEDIMENTO & ")"
+                    sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
+                    objDS = ctx.GetDataSet(sSQL, "IMMO_DICH_PER_STAMPA_ACCERTAMENTO")
+                    ctx.Dispose()
+                End Using
             Catch ex As Exception
-                Log.Debug("Query getImmobiliDichiaratiPerStampaAccertamentiTARSU::" & strSQL)
-                Log.Warn("getImmobiliDichiaratiPerStampaAccertamentiTARSU::" & ex.StackTrace)
-                Return objDS
-            Finally
-                If Not IsNothing(objDBManager) Then
-                    objDBManager.Kill()
-                    objDBManager.Dispose()
-
-                End If
+                Log.Debug("getImmobiliDichiaratiPerStampaAccertamentiTARSU::si è verificato il seguente errore::", ex)
+                objDS = Nothing
             End Try
+            Return objDS
+
         End Function
 
 
@@ -1166,7 +1243,7 @@ Namespace COMPlusOPENgovProvvedimenti
         'Public Function getDatiProvvedimento_PerTipo(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable) As DataSet
 
         '    Dim objDSDatiProvvedimento_PerTipo As DataSet = Nothing
-        '    Dim strSQL As String
+        '    Dim sSQL As String
         '    Dim objDA As SqlDataAdapter
         '    objUtility = New MotoreProvUtility
         '    Dim strNumeroAvviso As String = ""
@@ -1175,80 +1252,80 @@ Namespace COMPlusOPENgovProvvedimenti
 
         '    strPROGRESSIVO_ELABORAZIONE = objUtility.CToStr(objHashTable("PROGRESSIVO_ELABORAZIONE"))
 
-        '    strSQL = ""
-        '    'strSQL = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED" & vbCrLf
-        '    strSQL += "SELECT DISTINCT" & vbCrLf
-        '    strSQL += "TAB_PROCEDIMENTI.ANNO, PROVVEDIMENTI.NUMERO_AVVISO,PROVVEDIMENTI.NUMERO_ATTO,TAB_PROCEDIMENTI.COD_TIPO_PROCEDIMENTO,'' AS STATO," & vbCrLf
-        '    strSQL += "TAB_TIPO_PROVVEDIMENTO.DESCRIZIONE + '  ' + TAB_TRIBUTI.DESCRIZIONE AS TRIBUTO, PROVVEDIMENTI.IMPORTO_TOTALE, "
-        '    strSQL += "PROVVEDIMENTI.COD_CONTRIBUENTE, PROVVEDIMENTI.ID_PROVVEDIMENTO," & vbCrLf
-        '    strSQL += "TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO, TAB_TRIBUTI.COD_TRIBUTO, PROVVEDIMENTI.COGNOME + ' ' + PROVVEDIMENTI.NOME AS NOMINATIVO, PROVVEDIMENTI.DATA_ELABORAZIONE," & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_CONSEGNA_AVVISO, PROVVEDIMENTI.DATA_NOTIFICA_AVVISO, PROVVEDIMENTI.DATA_IRREPERIBILE, PROVVEDIMENTI.DATA_RETTIFICA_AVVISO, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO,PROVVEDIMENTI.DATA_PERVENUTO_IL, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_SCADENZA_QUESTIONARIO, PROVVEDIMENTI.DATA_RIMBORSO, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_AVVISO_AUTOTUTELA, .PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA, PROVVEDIMENTI.DATA_SENTENZA, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_ATTO_DEFINITIVO"
-        '    strSQL += ", DATA_PAGAMENTO AS DATA_VERSAMENTO_SOLUZIONE_UNICA"
-        '    strSQL += ", PROVVEDIMENTI.DATA_CONCESSIONE_RATEIZZAZIONE,PROVVEDIMENTI.DATA_CONFERMA,PROVVEDIMENTI.DATA_STAMPA," & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO_REGIONALE, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA_REGIONALE, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO_CASSAZIONE, " & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA_CASSAZIONE" & vbCrLf
+        '    sSQL = ""
+        '    'sSQL = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED" & vbCrLf
+        '    sSQL += "SELECT DISTINCT" & vbCrLf
+        '    sSQL += "TAB_PROCEDIMENTI.ANNO, PROVVEDIMENTI.NUMERO_AVVISO,PROVVEDIMENTI.NUMERO_ATTO,TAB_PROCEDIMENTI.COD_TIPO_PROCEDIMENTO,'' AS STATO," & vbCrLf
+        '    sSQL += "TAB_TIPO_PROVVEDIMENTO.DESCRIZIONE + '  ' + TAB_TRIBUTI.DESCRIZIONE AS TRIBUTO, PROVVEDIMENTI.IMPORTO_TOTALE, "
+        '    sSQL += "PROVVEDIMENTI.COD_CONTRIBUENTE, PROVVEDIMENTI.ID_PROVVEDIMENTO," & vbCrLf
+        '    sSQL += "TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO, TAB_TRIBUTI.COD_TRIBUTO, PROVVEDIMENTI.COGNOME + ' ' + PROVVEDIMENTI.NOME AS NOMINATIVO, PROVVEDIMENTI.DATA_ELABORAZIONE," & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_CONSEGNA_AVVISO, PROVVEDIMENTI.DATA_NOTIFICA_AVVISO, PROVVEDIMENTI.DATA_IRREPERIBILE, PROVVEDIMENTI.DATA_RETTIFICA_AVVISO, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO,PROVVEDIMENTI.DATA_PERVENUTO_IL, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_SCADENZA_QUESTIONARIO, PROVVEDIMENTI.DATA_RIMBORSO, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_AVVISO_AUTOTUTELA, .PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA, PROVVEDIMENTI.DATA_SENTENZA, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_ATTO_DEFINITIVO"
+        '    sSQL += ", DATA_PAGAMENTO AS DATA_VERSAMENTO_SOLUZIONE_UNICA"
+        '    sSQL += ", PROVVEDIMENTI.DATA_CONCESSIONE_RATEIZZAZIONE,PROVVEDIMENTI.DATA_CONFERMA,PROVVEDIMENTI.DATA_STAMPA," & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO_REGIONALE, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA_REGIONALE, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_PRESENTAZIONE_RICORSO_CASSAZIONE, " & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.DATA_SOSPENSIONE_DA_COMMISSIONE_TRIBUTARIA_CASSAZIONE" & vbCrLf
 
-        '    strSQL += " FROM TAB_PROCEDIMENTI"
-        '    strSQL += " INNER JOIN PROVVEDIMENTI ON TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = PROVVEDIMENTI.ID_PROVVEDIMENTO"
-        '    strSQL += " INNER JOIN TAB_TRIBUTI ON TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TRIBUTI.COD_TRIBUTO"
-        '    strSQL += " INNER JOIN TAB_TIPO_PROVVEDIMENTO ON TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO"
-        '    strSQL += "  LEFT JOIN ( 	SELECT ID_PROVVEDIMENTO, MIN(DATA_PAGAMENTO) AS DATA_PAGAMENTO, SUM(IMPORTO_PAGATO) AS PAGATO 	FROM V_GETPAGAMENTI 	GROUP BY ID_PROVVEDIMENTO ) P ON PROVVEDIMENTI.ID_PROVVEDIMENTO=P.ID_PROVVEDIMENTO"
+        '    sSQL += " FROM TAB_PROCEDIMENTI"
+        '    sSQL += " INNER JOIN PROVVEDIMENTI ON TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = PROVVEDIMENTI.ID_PROVVEDIMENTO"
+        '    sSQL += " INNER JOIN TAB_TRIBUTI ON TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TRIBUTI.COD_TRIBUTO"
+        '    sSQL += " INNER JOIN TAB_TIPO_PROVVEDIMENTO ON TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO"
+        '    sSQL += "  LEFT JOIN ( 	SELECT ID_PROVVEDIMENTO, MIN(DATA_PAGAMENTO) AS DATA_PAGAMENTO, SUM(IMPORTO_PAGATO) AS PAGATO 	FROM V_GETPAGAMENTI 	GROUP BY ID_PROVVEDIMENTO ) P ON PROVVEDIMENTI.ID_PROVVEDIMENTO=P.ID_PROVVEDIMENTO"
 
-        '    strSQL += "WHERE"
-        '    strSQL += " PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "'"
-        '    strSQL += " AND TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
-        '    strSQL += "ORDER BY TAB_PROCEDIMENTI.anno,TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO,PROVVEDIMENTI.COGNOME + ' ' + PROVVEDIMENTI.NOME,PROVVEDIMENTI.DATA_ELABORAZIONE" & vbCrLf
+        '    sSQL += "WHERE"
+        '    sSQL += " PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "'"
+        '    sSQL += " AND TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
+        '    sSQL += "ORDER BY TAB_PROCEDIMENTI.anno,TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO,PROVVEDIMENTI.COGNOME + ' ' + PROVVEDIMENTI.NOME,PROVVEDIMENTI.DATA_ELABORAZIONE" & vbCrLf
 
         '    objDSDatiProvvedimento_PerTipo = New DataSet
         '    objDBManager = New DBManager
 
         '    objDBManager.Initialize(StringConnectionProvv)
 
-        '    objDA = objDBManager.GetPrivateDataAdapter(strSQL)
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
 
         '    objDA.Fill(objDSDatiProvvedimento_PerTipo, "TP_ATTI_RICERCA_SEMPLICE")
 
-        '    strSQL = ""
-        '    strSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE" & vbCrLf
-        '    strSQL += "FROM PROVVEDIMENTI INNER JOIN" & vbCrLf
-        '    strSQL += "TAB_PROCEDIMENTI ON PROVVEDIMENTI.ID_PROVVEDIMENTO = TAB_PROCEDIMENTI.ID_PROVVEDIMENTO INNER JOIN" & vbCrLf
-        '    strSQL += "TAB_TIPO_PROVVEDIMENTO ON" & vbCrLf
-        '    strSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO" & vbCrLf
-        '    strSQL += "WHERE PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "' "
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "(PROVVEDIMENTI.DATA_RETTIFICA_AVVISO IS  NULL OR PROVVEDIMENTI.DATA_RETTIFICA_AVVISO = '')" & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "(PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO IS NULL OR PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO='')" & vbCrLf
-        '    objDA = objDBManager.GetPrivateDataAdapter(strSQL)
+        '    sSQL = ""
+        '    sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE" & vbCrLf
+        '    sSQL += "FROM PROVVEDIMENTI INNER JOIN" & vbCrLf
+        '    sSQL += "TAB_PROCEDIMENTI ON PROVVEDIMENTI.ID_PROVVEDIMENTO = TAB_PROCEDIMENTI.ID_PROVVEDIMENTO INNER JOIN" & vbCrLf
+        '    sSQL += "TAB_TIPO_PROVVEDIMENTO ON" & vbCrLf
+        '    sSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO" & vbCrLf
+        '    sSQL += "WHERE PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "' "
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "(PROVVEDIMENTI.DATA_RETTIFICA_AVVISO IS  NULL OR PROVVEDIMENTI.DATA_RETTIFICA_AVVISO = '')" & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "(PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO IS NULL OR PROVVEDIMENTI.DATA_ANNULLAMENTO_AVVISO='')" & vbCrLf
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
 
         '    objDA.Fill(objDSDatiProvvedimento_PerTipo, "TP_ATTI_RICERCA_SEMPLICE_TOTALE_RETTIFICATO")
 
-        '    strSQL = ""
-        '    strSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE" & vbCrLf
-        '    strSQL += "FROM TAB_PROCEDIMENTI INNER JOIN" & vbCrLf
-        '    strSQL += "PROVVEDIMENTI ON TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = PROVVEDIMENTI.ID_PROVVEDIMENTO INNER JOIN" & vbCrLf
-        '    strSQL += "TAB_TIPO_PROVVEDIMENTO ON " & vbCrLf
-        '    strSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO" & vbCrLf
-        '    strSQL += "WHERE PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "' "
-        '    strSQL += "AND TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
-        '    strSQL += "AND" & vbCrLf
-        '    strSQL += "PROVVEDIMENTI.ID_PROVVEDIMENTO NOT IN (SELECT ID_PROVVEDIMENTO_FIGLIO  FROM TP_PROVVEDIMENTI_RETTIFICATI)" & vbCrLf
-        '    objDA = objDBManager.GetPrivateDataAdapter(strSQL)
+        '    sSQL = ""
+        '    sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE" & vbCrLf
+        '    sSQL += "FROM TAB_PROCEDIMENTI INNER JOIN" & vbCrLf
+        '    sSQL += "PROVVEDIMENTI ON TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = PROVVEDIMENTI.ID_PROVVEDIMENTO INNER JOIN" & vbCrLf
+        '    sSQL += "TAB_TIPO_PROVVEDIMENTO ON " & vbCrLf
+        '    sSQL += "TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO = TAB_TIPO_PROVVEDIMENTO.COD_TIPO_PROVVEDIMENTO AND TAB_PROCEDIMENTI.COD_TRIBUTO = TAB_TIPO_PROVVEDIMENTO.COD_TRIBUTO" & vbCrLf
+        '    sSQL += "WHERE PROVVEDIMENTI.COD_ENTE='" & strCOD_ENTE & "' "
+        '    sSQL += "AND TAB_PROCEDIMENTI.COD_TIPO_PROVVEDIMENTO <>0" & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.PROGRESSIVO_ELABORAZIONE=" & strPROGRESSIVO_ELABORAZIONE & vbCrLf
+        '    sSQL += "AND" & vbCrLf
+        '    sSQL += "PROVVEDIMENTI.ID_PROVVEDIMENTO NOT IN (SELECT ID_PROVVEDIMENTO_FIGLIO  FROM TP_PROVVEDIMENTI_RETTIFICATI)" & vbCrLf
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
         '    objDA.Fill(objDSDatiProvvedimento_PerTipo, "TP_ATTI_RICERCA_SEMPLICE_IMPORTO_TOTALE")
         '    If Not IsNothing(objDBManager) Then
         '        objDBManager.Kill()
@@ -1392,7 +1469,7 @@ Namespace COMPlusOPENgovProvvedimenti
         '<AutoComplete()>
         'Public Function GetDatiAttiRicercaAvanzata(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal strFilterData As String) As DataSet
         '    Dim objDSAttiRicercaAvanzata As DataSet = Nothing
-        '    Dim strSQL As String
+        '    Dim sSQL As String
         '    Dim objDA As New SqlDataAdapter
         '    objUtility = New MotoreProvUtility
         '    Dim strNumeroAvviso As String = ""
@@ -1419,140 +1496,140 @@ Namespace COMPlusOPENgovProvvedimenti
         '            cmdMyCommand.Connection.Open()
         '        End If
         '        '*** 20130116 - aggiungere il parametro di pagato su rateizzo ***
-        '        strSQL = "SELECT *"
-        '        strSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        strSQL += " WHERE 1=1"
+        '        sSQL = "SELECT *"
+        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+        '        sSQL += " WHERE 1=1"
         '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        strSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
         '        '*** ***
         '        If strAnno.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
+        '            sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
         '        End If
         '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
+        '            sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
         '        End If
         '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
+        '            sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
         '        End If
-        '        strSQL += strFilterData
-        '        strSQL += " ORDER BY COGNOME + ' ' + NOME, ANNO DESC, COD_TIPO_PROVVEDIMENTO, DATA_ELABORAZIONE"
+        '        sSQL += strFilterData
+        '        sSQL += " ORDER BY COGNOME + ' ' + NOME, ANNO DESC, COD_TIPO_PROVVEDIMENTO, DATA_ELABORAZIONE"
         '        objDSAttiRicercaAvanzata = New DataSet
         '        Log.Debug("GetDatiAttiRicercaAvanzata::connessione::" & StringConnectionProvv)
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_ATTI_RICERCA_AVANZATA ricerca::" & strSQL)
+        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_ATTI_RICERCA_AVANZATA ricerca::" & sSQL)
 
         '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        objDA.SelectCommand = cmdMyCommand
         '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_ATTI_RICERCA_AVANZATA")
         '        '**********************************SELEZIONE PER STAMPA*************************************
-        '        strSQL = "SELECT DESCRIZIONE_ENTE, COGNOME, NOME, STAMPA_CFPIVA, STAMPA_INDIRIZZO"
-        '        strSQL += " , STAMPA_NATTO, ANNO, TRIBUTO, STATO"
-        '        strSQL += " , STAMPA_DATA_ELABORAZIONE, STAMPA_DATA_STAMPA, STAMPA_DATA_CONSEGNA_AVVISO, STAMPA_DATA_NOTIFICA_AVVISO, STAMPA_DATA_ANNULLAMENTO_AVVISO, STAMPA_DATA_PAGAMENTO"
-        '        strSQL += " , NOTE_GENERALI_ATTO "
-        '        strSQL += " , STAMPA_MQDICH, STAMPA_MQACC"
-        '        strSQL += " , STAMPA_IMP_DIFIMP, STAMPA_IMP_SANZ, STAMPA_IMP_SANZNORID, STAMPA_IMP_SANZRID, STAMPA_IMP_INT, STAMPA_IMP_ALTRO, STAMPA_IMP_SPESE"
-        '        strSQL += " , STAMPA_IMP_ARR, STAMPA_IMP_TOT"
-        '        strSQL += " , STAMPA_IMP_ARRRID, STAMPA_IMP_TOT_RIDOTTO"
-        '        strSQL += " , STAMPA_PAGATO, RATEIZZATO"
-        '        strSQL += " FROM V_GET_RICERCAAVANZATAATTI_STAMPA"
-        '        strSQL += " WHERE 1=1"
+        '        sSQL = "SELECT DESCRIZIONE_ENTE, COGNOME, NOME, STAMPA_CFPIVA, STAMPA_INDIRIZZO"
+        '        sSQL += " , STAMPA_NATTO, ANNO, TRIBUTO, STATO"
+        '        sSQL += " , STAMPA_DATA_ELABORAZIONE, STAMPA_DATA_STAMPA, STAMPA_DATA_CONSEGNA_AVVISO, STAMPA_DATA_NOTIFICA_AVVISO, STAMPA_DATA_ANNULLAMENTO_AVVISO, STAMPA_DATA_PAGAMENTO"
+        '        sSQL += " , NOTE_GENERALI_ATTO "
+        '        sSQL += " , STAMPA_MQDICH, STAMPA_MQACC"
+        '        sSQL += " , STAMPA_IMP_DIFIMP, STAMPA_IMP_SANZ, STAMPA_IMP_SANZNORID, STAMPA_IMP_SANZRID, STAMPA_IMP_INT, STAMPA_IMP_ALTRO, STAMPA_IMP_SPESE"
+        '        sSQL += " , STAMPA_IMP_ARR, STAMPA_IMP_TOT"
+        '        sSQL += " , STAMPA_IMP_ARRRID, STAMPA_IMP_TOT_RIDOTTO"
+        '        sSQL += " , STAMPA_PAGATO, RATEIZZATO"
+        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI_STAMPA"
+        '        sSQL += " WHERE 1=1"
         '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        strSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
         '        '*** ***
         '        If strAnno.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
+        '            sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
         '        End If
         '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
+        '            sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
         '        End If
         '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
+        '            sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
         '        End If
-        '        strSQL += strFilterData
-        '        strSQL += " ORDER BY DESCRIZIONE_ENTE, COGNOME, NOME, ANNO DESC, STAMPA_DATA_ELABORAZIONE"
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_RICERCA_AVANZATA_PER_STAMPA ricerca::" & strSQL)
+        '        sSQL += strFilterData
+        '        sSQL += " ORDER BY DESCRIZIONE_ENTE, COGNOME, NOME, ANNO DESC, STAMPA_DATA_ELABORAZIONE"
+        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_RICERCA_AVANZATA_PER_STAMPA ricerca::" & sSQL)
         '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        objDA.SelectCommand = cmdMyCommand
         '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_RICERCA_AVANZATA_PER_STAMPA")
         '        '**********************************FINE SELEZIONE PER STAMPA*************************************
 
         '        '*************************************TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI**********************************************
-        '        strSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE"
-        '        strSQL += ", SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO"
-        '        strSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        strSQL += " WHERE (DATA_RETTIFICA_AVVISO IS NULL OR DATA_RETTIFICA_AVVISO='')"
-        '        strSQL += " AND (DATA_ANNULLAMENTO_AVVISO IS NULL OR DATA_ANNULLAMENTO_AVVISO='')"
+        '        sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE"
+        '        sSQL += ", SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO"
+        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+        '        sSQL += " WHERE (DATA_RETTIFICA_AVVISO IS NULL OR DATA_RETTIFICA_AVVISO='')"
+        '        sSQL += " AND (DATA_ANNULLAMENTO_AVVISO IS NULL OR DATA_ANNULLAMENTO_AVVISO='')"
         '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        strSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
         '        '*** ***
         '        If strAnno.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
+        '            sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
         '        End If
         '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+        '            sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
         '        End If
         '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+        '            sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
         '        End If
-        '        strSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_RETTIFICATO ricerca::" & strSQL)
+        '        sSQL += strFilterData
+        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_RETTIFICATO ricerca::" & sSQL)
         '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        objDA.SelectCommand = cmdMyCommand
         '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_RETTIFICATO")
         '        '**********************************FINE TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI*************************************
 
         '        '********************************** TOTALE *************************************
-        '        strSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE, SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO "
-        '        strSQL += " FROM V_GET_RICERCAAVANZATAATTI "
-        '        strSQL += " LEFT JOIN TP_PROVVEDIMENTI_RETTIFICATI ON V_GET_RICERCAAVANZATAATTI.ID_PROVVEDIMENTO=TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO"
-        '        strSQL += " WHERE  (TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO IS NULL)"
+        '        sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE, SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO "
+        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI "
+        '        sSQL += " LEFT JOIN TP_PROVVEDIMENTI_RETTIFICATI ON V_GET_RICERCAAVANZATAATTI.ID_PROVVEDIMENTO=TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO"
+        '        sSQL += " WHERE  (TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO IS NULL)"
         '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        strSQL += " AND ('" & strCOD_ENTE & "'='' OR V_GET_RICERCAAVANZATAATTI.COD_ENTE='" & strCOD_ENTE & "')"
+        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR V_GET_RICERCAAVANZATAATTI.COD_ENTE='" & strCOD_ENTE & "')"
         '        '*** ***
         '        If strAnno.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND V_GET_RICERCAAVANZATAATTI.ANNO =" & objUtility.CStrToDB(strAnno)
+        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.ANNO =" & objUtility.CStrToDB(strAnno)
         '        End If
         '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
         '        End If
         '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
         '        End If
-        '        strSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_GENERALE ricerca::" & strSQL)
+        '        sSQL += strFilterData
+        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_GENERALE ricerca::" & sSQL)
         '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        objDA.SelectCommand = cmdMyCommand
         '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_GENERALE")
         '        '**********************************FINE TOTALE*************************************
 
         '        '********************* TOTALE CONTRIBUENTI *************************
-        '        strSQL = "SELECT DISTINCT COD_CONTRIBUENTE"
-        '        strSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        strSQL += " WHERE 1=1"
+        '        sSQL = "SELECT DISTINCT COD_CONTRIBUENTE"
+        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+        '        sSQL += " WHERE 1=1"
         '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        strSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
         '        '*** ***
         '        If strAnno.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
+        '            sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
         '        End If
         '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+        '            sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
         '        End If
         '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            strSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+        '            sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
         '        End If
-        '        strSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_CONTRIBUENTI ricerca::" & strSQL)
+        '        sSQL += strFilterData
+        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_CONTRIBUENTI ricerca::" & sSQL)
         '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = strSQL
+        '        cmdMyCommand.CommandText = sSQL
         '        objDA.SelectCommand = cmdMyCommand
         '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_CONTRIBUENTI")
         '        '********************* FINE TOTALE CONTRIBUENTI ********************
@@ -1633,29 +1710,29 @@ Namespace COMPlusOPENgovProvvedimenti
         '<AutoComplete()>
         'Public Function getControlloAccertamento(ByVal sAnno As String, ByVal strCodEnte As String, ByVal strCodContrib As String, ByVal strCodTributo As String, ByVal objHashTable As Hashtable) As DataSet
 
-        '    Dim strSQL As String
+        '    Dim sSQL As String
 
         '    Dim objDS As DataSet = Nothing
         '    Dim objDA As SqlDataAdapter
         '    objUtility = New MotoreProvUtility
 
 
-        '    strSQL = "SELECT PROVVEDIMENTI.ID_PROVVEDIMENTO, PROVVEDIMENTI.NUMERO_AVVISO, PROVVEDIMENTI.DATA_CONFERMA, PROVVEDIMENTI.DATA_ELABORAZIONE "
+        '    sSQL = "SELECT PROVVEDIMENTI.ID_PROVVEDIMENTO, PROVVEDIMENTI.NUMERO_AVVISO, PROVVEDIMENTI.DATA_CONFERMA, PROVVEDIMENTI.DATA_ELABORAZIONE "
 
-        '    strSQL += " FROM PROVVEDIMENTI INNER JOIN "
-        '    strSQL += " TAB_PROCEDIMENTI ON PROVVEDIMENTI.ID_PROVVEDIMENTO = TAB_PROCEDIMENTI.ID_PROVVEDIMENTO"
+        '    sSQL += " FROM PROVVEDIMENTI INNER JOIN "
+        '    sSQL += " TAB_PROCEDIMENTI ON PROVVEDIMENTI.ID_PROVVEDIMENTO = TAB_PROCEDIMENTI.ID_PROVVEDIMENTO"
 
-        '    strSQL += " WHERE PROVVEDIMENTI.COD_ENTE='" & strCodEnte & "' "
-        '    strSQL += " AND TAB_PROCEDIMENTI.COD_TIPO_PROCEDIMENTO='A' "
-        '    strSQL += " AND PROVVEDIMENTI.COD_CONTRIBUENTE=" & strCodContrib & ""
-        '    strSQL += " AND PROVVEDIMENTI.COD_TRIBUTO='" & strCodTributo & "'"
+        '    sSQL += " WHERE PROVVEDIMENTI.COD_ENTE='" & strCodEnte & "' "
+        '    sSQL += " AND TAB_PROCEDIMENTI.COD_TIPO_PROCEDIMENTO='A' "
+        '    sSQL += " AND PROVVEDIMENTI.COD_CONTRIBUENTE=" & strCodContrib & ""
+        '    sSQL += " AND PROVVEDIMENTI.COD_TRIBUTO='" & strCodTributo & "'"
 
         '    If sAnno.CompareTo("-1") <> 0 Then
-        '        strSQL += " AND TAB_PROCEDIMENTI.ANNO = '" & sAnno & "'"
+        '        sSQL += " AND TAB_PROCEDIMENTI.ANNO = '" & sAnno & "'"
         '    End If
         '    If objHashTable.ContainsKey("ID_PROVVEDIMENTO_RETTIFICA") Then
         '        If objHashTable("ID_PROVVEDIMENTO_RETTIFICA").ToString <> "" And objHashTable("ID_PROVVEDIMENTO_RETTIFICA").ToString <> "0" Then
-        '            strSQL += " AND TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = " & objHashTable("ID_PROVVEDIMENTO_RETTIFICA").ToString
+        '            sSQL += " AND TAB_PROCEDIMENTI.ID_PROVVEDIMENTO = " & objHashTable("ID_PROVVEDIMENTO_RETTIFICA").ToString
         '        End If
         '    End If
 
@@ -1663,8 +1740,8 @@ Namespace COMPlusOPENgovProvvedimenti
         '    objDBManager = New DBManager
 
         '    objDBManager.Initialize(StringConnectionProvv)
-        '    Log.Debug("getControlloAccertamento::query::" & strSQL)
-        '    objDA = objDBManager.GetPrivateDataAdapter(strSQL)
+        '    Log.Debug("getControlloAccertamento::query::" & sSQL)
+        '    objDA = objDBManager.GetPrivateDataAdapter(sSQL)
 
         '    objDA.Fill(objDS, "ControlloAccertamento")
 

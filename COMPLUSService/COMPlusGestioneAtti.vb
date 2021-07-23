@@ -3,7 +3,6 @@ Imports System.Data.SqlClient
 Imports System.EnterpriseServices
 Imports System.Reflection
 Imports System.Runtime.InteropServices
-Imports RIBESFrameWork
 Imports log4net
 Imports ComPlusInterface
 

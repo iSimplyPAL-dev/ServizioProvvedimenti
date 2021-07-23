@@ -3,7 +3,6 @@ Imports System.Configuration
 Imports System.Data
 Imports System.Data.SqlClient
 Imports System.Data.OleDb
-Imports RIBESFrameWork
 Imports System.EnterpriseServices
 Imports System.Runtime.InteropServices
 Imports System.Messaging
