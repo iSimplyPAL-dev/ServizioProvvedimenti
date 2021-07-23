@@ -320,6 +320,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     ctx.Dispose()
                 End Using
 
+                Log.Debug("DeleteProvvedimentiAccertamento 1 delete intRetVal = " + intRetVal.ToString())
+
                 strSQL = ""
                 'cancellando PROVVEDIMENTI, cancello a cascata (relazioni) anche tutte le tabelle degli accertamenti
                 strSQL += " DELETE FROM PROVVEDIMENTI "
@@ -331,6 +333,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     ctx.Dispose()
                 End Using
 
+                Log.Debug("DeleteProvvedimentiAccertamento 2 delete intRetVal = " + intRetVal.ToString())
+
                 strSQL = ""
                 strSQL += " DELETE FROM DETTAGLIO_VOCI_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO & ";"
@@ -340,6 +344,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     intRetVal = ctx.ExecuteNonQuery(strSQL)
                     ctx.Dispose()
                 End Using
+
+                Log.Debug("DeleteProvvedimentiAccertamento 3 delete intRetVal = " + intRetVal.ToString())
 
                 strSQL = ""
                 strSQL += " DELETE FROM VERSAMENTI_ICI_LIQUIDAZIONI "
@@ -351,6 +357,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     ctx.Dispose()
                 End Using
 
+                Log.Debug("DeleteProvvedimentiAccertamento 4 delete intRetVal = " + intRetVal.ToString())
+
                 strSQL = ""
                 strSQL += " DELETE FROM tp_Immobili_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
@@ -360,6 +368,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     intRetVal = ctx.ExecuteNonQuery(strSQL)
                     ctx.Dispose()
                 End Using
+
+                Log.Debug("DeleteProvvedimentiAccertamento 5 delete intRetVal = " + intRetVal.ToString())
 
                 strSQL = ""
                 strSQL += " DELETE FROM tp_contitolari_LIQUIDAZIONI "
@@ -371,6 +381,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     ctx.Dispose()
                 End Using
 
+                Log.Debug("DeleteProvvedimentiAccertamento 6 delete intRetVal = " + intRetVal.ToString())
+
                 strSQL = ""
                 strSQL += " DELETE FROM TP_SITUAZIONE_FINALE_ICI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
@@ -380,6 +392,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     intRetVal = ctx.ExecuteNonQuery(strSQL)
                     ctx.Dispose()
                 End Using
+
+                Log.Debug("DeleteProvvedimentiAccertamento 7 delete intRetVal = " + intRetVal.ToString())
 
                 strSQL = ""
                 strSQL += " DELETE from TP_PROVVEDIMENTI_RETTIFICATI "
@@ -391,11 +405,15 @@ Namespace COMPlusOPENgovProvvedimenti
                     ctx.Dispose()
                 End Using
 
+                Log.Debug("DeleteProvvedimentiAccertamento 8 delete intRetVal = " + intRetVal.ToString())
+
                 If intRetVal = COSTANTValue.CostantiProv.INIT_VALUE_NUMBER Then
                     'Throw New Exception("Application::COMPlusOPENgovProvvedimenti::Function::DeleteProvvedimentiLiquidazioni::DBOPENgovProvvedimentiUpdate")
+                    Log.Debug("DeleteProvvedimentiAccertamento torna false")
                     Return False
                 End If
 
+                Log.Debug("DeleteProvvedimentiAccertamento torna true")
                 Return True
                 'End If
             Catch ex As Exception
@@ -2058,6 +2076,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     'vuol dire che ho trovato un atto non definitivo oppure nessun atto
                     If ID_PROVVEDIMENTO <> 0 Then
                         If DeleteProvvedimentiAccertamento(StringConnectionProvv, myHashTable, ID_PROCEDIMENTO, ID_PROVVEDIMENTO) = False Then
+                            Log.Debug("Fallita DeleteProvvedimentiAccertamento")
                             Return -1
                         End If
                     End If
