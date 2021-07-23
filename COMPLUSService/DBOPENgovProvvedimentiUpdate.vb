@@ -314,29 +314,79 @@ Namespace COMPlusOPENgovProvvedimenti
                 strSQL += " DELETE FROM DICHIARATO_ICI_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 'cancellando PROVVEDIMENTI, cancello a cascata (relazioni) anche tutte le tabelle degli accertamenti
                 strSQL += " DELETE FROM PROVVEDIMENTI "
                 strSQL += " WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE FROM DETTAGLIO_VOCI_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROVVEDIMENTO=" & ID_PROVVEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE FROM VERSAMENTI_ICI_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE FROM tp_Immobili_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE FROM tp_contitolari_LIQUIDAZIONI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE FROM TP_SITUAZIONE_FINALE_ICI "
                 strSQL += " WHERE ID_PROCEDIMENTO=" & ID_PROCEDIMENTO & ";"
 
+                Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
+                    intRetVal = ctx.ExecuteNonQuery(strSQL)
+                    ctx.Dispose()
+                End Using
+
+                strSQL = ""
                 strSQL += " DELETE from TP_PROVVEDIMENTI_RETTIFICATI "
                 strSQL += " WHERE ID_PROVVEDIMENTO_FIGLIO=" & ID_PROVVEDIMENTO & ";"
 
                 Using ctx As New DBModel(COSTANTValue.CostantiProv.DBType, StringConnectionProvv)
+                    strSQL = ctx.GetSQL(DBModel.TypeQuery.View, strSQL)
                     intRetVal = ctx.ExecuteNonQuery(strSQL)
                     ctx.Dispose()
                 End Using
