@@ -664,9 +664,13 @@ Namespace COMPlusOPENgovProvvedimenti
                     myHashTable.Add("ANNOA", myHashTable("ANNOACCERTAMENTO"))
                 End If
 
+                Log.Debug("Prima della chiamata all'anagrafica IdContribuente = " + IdContribuente.ToString())
+
                 Dim myAnag As New AnagInterface.DettaglioAnagrafica
                 Dim FncAnag As New Anagrafica.DLL.GestioneAnagrafica
                 myAnag = FncAnag.GetAnagrafica(IdContribuente, -1, "", myHashTable("DBType"), myHashTable("CONNECTIONSTRINGANAGRAFICA"), False)
+
+                Log.Debug("Dopo la chiamata all'anagrafica IdContribuente = " + IdContribuente.ToString())
 
                 FncProvUpdate = New DBOPENgovProvvedimentiUpdate
 
