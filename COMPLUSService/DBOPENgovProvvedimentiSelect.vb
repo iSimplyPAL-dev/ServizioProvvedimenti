@@ -329,6 +329,9 @@ Namespace COMPlusOPENgovProvvedimenti
                         'aumento di 1 il valore trovato e lo restituisco in output
                         dr.Read()
                         iNUMERO_ATTO = dr.Item("NUMERO_ATTO") + 1
+
+                        dr.Close()
+
                         sSQL = "UPDATE TBLNUMEROATTO SET NUMERO_ATTO=" & iNUMERO_ATTO
                         sSQL += " WHERE COD_ENTE='" & COD_ENTE & "'"
                         '*** 20112008 Fabi - invece dell'anno del provvedimento usare l'anno di stampa
@@ -337,6 +340,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     Else
                         'riga non trovata 
                         'inserisco nuovo valore (1) e lo restituisco in output
+                        dr.Close()
+
                         iNUMERO_ATTO = 1
                         sSQL = "INSERT INTO TBLNUMEROATTO (NUMERO_ATTO,COD_ENTE,ANNO)"
                         sSQL += " VALUES("
@@ -348,7 +353,7 @@ Namespace COMPlusOPENgovProvvedimenti
                         ctx.ExecuteNonQuery(sSQL)
                     End If
 
-                    dr.Close()
+
                     ctx.Dispose()
                 End Using
 
