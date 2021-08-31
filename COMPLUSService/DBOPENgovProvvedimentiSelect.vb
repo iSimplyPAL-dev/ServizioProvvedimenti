@@ -1351,9 +1351,10 @@ Namespace COMPlusOPENgovProvvedimenti
         ''' <revisionHistory><revision date="20130116">aggiungere il parametro di pagato su rateizzo</revision></revisionHistory>
         ''' <revisionHistory><revision date="201511">Funzioni Sovracomunali</revision></revisionHistory>
         <AutoComplete()>
-        Public Function GetDatiAttiRicercaAvanzata(myStringConnection As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal strFilterData As String) As DataSet
+        Public Function GetDatiAttiRicercaAvanzataNew(myStringConnection As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal strFilterData As String) As DataSet
             Dim sSQL As String = ""
             Dim myDataSet As New DataSet
+
             Dim strTIPOLOGIAATTO As String = StringOperation.FormatString(objHashTable("TIPOPROVVEDIMENTO"))
             Dim strAmbiente As String = StringOperation.FormatString(objHashTable("AMBIENTE"))
             Dim strAnno As String = StringOperation.FormatString(objHashTable("ANNO"))
@@ -1379,6 +1380,8 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += " ORDER BY COGNOME + ' ' + NOME, ANNO DESC, COD_TIPO_PROVVEDIMENTO, DATA_ELABORAZIONE"
                     sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
                     myDataSet = ctx.GetDataSet(sSQL, "TP_ATTI_RICERCA_AVANZATA")
+
+
                     '**********************************SELEZIONE PER STAMPA*************************************
                     sSQL = "SELECT DESCRIZIONE_ENTE, COGNOME, NOME, STAMPA_CFPIVA, STAMPA_INDIRIZZO"
                     sSQL += " , STAMPA_NATTO, ANNO, TRIBUTO, STATO"
@@ -1406,6 +1409,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += " ORDER BY DESCRIZIONE_ENTE, COGNOME, NOME, ANNO DESC, STAMPA_DATA_ELABORAZIONE"
                     sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
                     myDataSet = ctx.GetDataSet(sSQL, "TP_RICERCA_AVANZATA_PER_STAMPA")
+
                     '*************************************TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI**********************************************
                     sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE"
                     sSQL += ", SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO"
@@ -1426,6 +1430,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += strFilterData
                     sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
                     myDataSet = ctx.GetDataSet(sSQL, "TP_TOTALE_RETTIFICATO")
+
                     '********************************** TOTALE *************************************
                     sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE, SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO "
                     sSQL += " FROM V_GET_RICERCAAVANZATAATTI "
@@ -1445,6 +1450,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += strFilterData
                     sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
                     myDataSet = ctx.GetDataSet(sSQL, "TP_TOTALE_GENERALE")
+
                     '********************* TOTALE CONTRIBUENTI *************************
                     sSQL = "SELECT DISTINCT COD_CONTRIBUENTE"
                     sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
@@ -1463,6 +1469,7 @@ Namespace COMPlusOPENgovProvvedimenti
                     sSQL += strFilterData
                     sSQL = ctx.GetSQL(DBModel.TypeQuery.View, sSQL)
                     myDataSet = ctx.GetDataSet(sSQL, "TP_TOTALE_CONTRIBUENTI")
+
                     ctx.Dispose()
                 End Using
             Catch ex As Exception
@@ -1471,181 +1478,181 @@ Namespace COMPlusOPENgovProvvedimenti
             End Try
             Return myDataSet
         End Function
-        '<AutoComplete()>
-        'Public Function GetDatiAttiRicercaAvanzata(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal strFilterData As String) As DataSet
-        '    Dim objDSAttiRicercaAvanzata As DataSet = Nothing
-        '    Dim sSQL As String
-        '    Dim objDA As New SqlDataAdapter
-        '    objUtility = New MotoreProvUtility
-        '    Dim strNumeroAvviso As String = ""
-        '    Dim strCodContribuente As String = ""
-        '    Dim strAmbiente As String = ""
-        '    Dim strCOD_TRIBUTO As String = ""
-        '    Dim cmdMyCommand As New SqlClient.SqlCommand
+        <AutoComplete()>
+        Public Function GetDatiAttiRicercaAvanzata(StringConnectionProvv As String, strCOD_ENTE As String, ByVal objHashTable As Hashtable, ByVal strFilterData As String) As DataSet
+            Dim objDSAttiRicercaAvanzata As DataSet = Nothing
+            Dim sSQL As String
+            Dim objDA As New SqlDataAdapter
+            objUtility = New MotoreProvUtility
+            Dim strNumeroAvviso As String = ""
+            Dim strCodContribuente As String = ""
+            Dim strAmbiente As String = ""
+            Dim strCOD_TRIBUTO As String = ""
+            Dim cmdMyCommand As New SqlClient.SqlCommand
 
-        '    Try
-        '        Dim strAnno As String = CType(objHashTable("ANNO"), String)
-        '        Dim strTIPOLOGIAATTO As String = CType(objHashTable("TIPOPROVVEDIMENTO"), String)
+            Try
+                Dim strAnno As String = CType(objHashTable("ANNO"), String)
+                Dim strTIPOLOGIAATTO As String = CType(objHashTable("TIPOPROVVEDIMENTO"), String)
 
 
-        '        strCOD_TRIBUTO = CType(objHashTable("CODTRIBUTO"), String)
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        strAmbiente = CType(objHashTable("AMBIENTE"), String)
-        '        '*** ***
+                strCOD_TRIBUTO = CType(objHashTable("CODTRIBUTO"), String)
+                '*** 201511 - Funzioni Sovracomunali ***
+                strAmbiente = CType(objHashTable("AMBIENTE"), String)
+                '*** ***
 
-        '        '*** 20140509 - TASI ***
-        '        'Valorizzo la connessione
-        '        cmdMyCommand.Connection = New SqlClient.SqlConnection(StringConnectionProvv)
-        '        cmdMyCommand.CommandTimeout = 0
-        '        If cmdMyCommand.Connection.State = ConnectionState.Closed Then
-        '            cmdMyCommand.Connection.Open()
-        '        End If
-        '        '*** 20130116 - aggiungere il parametro di pagato su rateizzo ***
-        '        sSQL = "SELECT *"
-        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        sSQL += " WHERE 1=1"
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
-        '        '*** ***
-        '        If strAnno.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
-        '        End If
-        '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
-        '        End If
-        '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
-        '        End If
-        '        sSQL += strFilterData
-        '        sSQL += " ORDER BY COGNOME + ' ' + NOME, ANNO DESC, COD_TIPO_PROVVEDIMENTO, DATA_ELABORAZIONE"
-        '        objDSAttiRicercaAvanzata = New DataSet
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::connessione::" & StringConnectionProvv)
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_ATTI_RICERCA_AVANZATA ricerca::" & sSQL)
+                '*** 20140509 - TASI ***
+                'Valorizzo la connessione
+                cmdMyCommand.Connection = New SqlClient.SqlConnection(StringConnectionProvv)
+                cmdMyCommand.CommandTimeout = 0
+                If cmdMyCommand.Connection.State = ConnectionState.Closed Then
+                    cmdMyCommand.Connection.Open()
+                End If
+                '*** 20130116 - aggiungere il parametro di pagato su rateizzo ***
+                sSQL = "SELECT *"
+                sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+                sSQL += " WHERE 1=1"
+                '*** 201511 - Funzioni Sovracomunali ***
+                sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+                sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+                '*** ***
+                If strAnno.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
+                End If
+                If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
+                End If
+                If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
+                End If
+                sSQL += strFilterData
+                sSQL += " ORDER BY COGNOME + ' ' + NOME, ANNO DESC, COD_TIPO_PROVVEDIMENTO, DATA_ELABORAZIONE"
+                objDSAttiRicercaAvanzata = New DataSet
+                Log.Debug("GetDatiAttiRicercaAvanzata::connessione::" & StringConnectionProvv)
+                Log.Debug("GetDatiAttiRicercaAvanzata::TP_ATTI_RICERCA_AVANZATA ricerca::" & sSQL)
 
-        '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = sSQL
-        '        objDA.SelectCommand = cmdMyCommand
-        '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_ATTI_RICERCA_AVANZATA")
-        '        '**********************************SELEZIONE PER STAMPA*************************************
-        '        sSQL = "SELECT DESCRIZIONE_ENTE, COGNOME, NOME, STAMPA_CFPIVA, STAMPA_INDIRIZZO"
-        '        sSQL += " , STAMPA_NATTO, ANNO, TRIBUTO, STATO"
-        '        sSQL += " , STAMPA_DATA_ELABORAZIONE, STAMPA_DATA_STAMPA, STAMPA_DATA_CONSEGNA_AVVISO, STAMPA_DATA_NOTIFICA_AVVISO, STAMPA_DATA_ANNULLAMENTO_AVVISO, STAMPA_DATA_PAGAMENTO"
-        '        sSQL += " , NOTE_GENERALI_ATTO "
-        '        sSQL += " , STAMPA_MQDICH, STAMPA_MQACC"
-        '        sSQL += " , STAMPA_IMP_DIFIMP, STAMPA_IMP_SANZ, STAMPA_IMP_SANZNORID, STAMPA_IMP_SANZRID, STAMPA_IMP_INT, STAMPA_IMP_ALTRO, STAMPA_IMP_SPESE"
-        '        sSQL += " , STAMPA_IMP_ARR, STAMPA_IMP_TOT"
-        '        sSQL += " , STAMPA_IMP_ARRRID, STAMPA_IMP_TOT_RIDOTTO"
-        '        sSQL += " , STAMPA_PAGATO, RATEIZZATO"
-        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI_STAMPA"
-        '        sSQL += " WHERE 1=1"
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
-        '        '*** ***
-        '        If strAnno.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
-        '        End If
-        '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
-        '        End If
-        '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
-        '        End If
-        '        sSQL += strFilterData
-        '        sSQL += " ORDER BY DESCRIZIONE_ENTE, COGNOME, NOME, ANNO DESC, STAMPA_DATA_ELABORAZIONE"
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_RICERCA_AVANZATA_PER_STAMPA ricerca::" & sSQL)
-        '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = sSQL
-        '        objDA.SelectCommand = cmdMyCommand
-        '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_RICERCA_AVANZATA_PER_STAMPA")
-        '        '**********************************FINE SELEZIONE PER STAMPA*************************************
+                cmdMyCommand.CommandType = CommandType.Text
+                cmdMyCommand.CommandText = sSQL
+                objDA.SelectCommand = cmdMyCommand
+                objDA.Fill(objDSAttiRicercaAvanzata, "TP_ATTI_RICERCA_AVANZATA")
+                '**********************************SELEZIONE PER STAMPA*************************************
+                sSQL = "SELECT DESCRIZIONE_ENTE, COGNOME, NOME, STAMPA_CFPIVA, STAMPA_INDIRIZZO"
+                sSQL += " , STAMPA_NATTO, ANNO, TRIBUTO, STATO"
+                sSQL += " , STAMPA_DATA_ELABORAZIONE, STAMPA_DATA_STAMPA, STAMPA_DATA_CONSEGNA_AVVISO, STAMPA_DATA_NOTIFICA_AVVISO, STAMPA_DATA_ANNULLAMENTO_AVVISO, STAMPA_DATA_PAGAMENTO"
+                sSQL += " , NOTE_GENERALI_ATTO "
+                sSQL += " , STAMPA_MQDICH, STAMPA_MQACC"
+                sSQL += " , STAMPA_IMP_DIFIMP, STAMPA_IMP_SANZ, STAMPA_IMP_SANZNORID, STAMPA_IMP_SANZRID, STAMPA_IMP_INT, STAMPA_IMP_ALTRO, STAMPA_IMP_SPESE"
+                sSQL += " , STAMPA_IMP_ARR, STAMPA_IMP_TOT"
+                sSQL += " , STAMPA_IMP_ARRRID, STAMPA_IMP_TOT_RIDOTTO"
+                sSQL += " , STAMPA_PAGATO, RATEIZZATO"
+                sSQL += " FROM V_GET_RICERCAAVANZATAATTI_STAMPA"
+                sSQL += " WHERE 1=1"
+                '*** 201511 - Funzioni Sovracomunali ***
+                sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+                sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+                '*** ***
+                If strAnno.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (ANNO =" & objUtility.CStrToDB(strAnno) & ")"
+                End If
+                If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO) & ")"
+                End If
+                If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND (COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO & ")"
+                End If
+                sSQL += strFilterData
+                sSQL += " ORDER BY DESCRIZIONE_ENTE, COGNOME, NOME, ANNO DESC, STAMPA_DATA_ELABORAZIONE"
+                Log.Debug("GetDatiAttiRicercaAvanzata::TP_RICERCA_AVANZATA_PER_STAMPA ricerca::" & sSQL)
+                cmdMyCommand.CommandType = CommandType.Text
+                cmdMyCommand.CommandText = sSQL
+                objDA.SelectCommand = cmdMyCommand
+                objDA.Fill(objDSAttiRicercaAvanzata, "TP_RICERCA_AVANZATA_PER_STAMPA")
+                '**********************************FINE SELEZIONE PER STAMPA*************************************
 
-        '        '*************************************TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI**********************************************
-        '        sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE"
-        '        sSQL += ", SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO"
-        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        sSQL += " WHERE (DATA_RETTIFICA_AVVISO IS NULL OR DATA_RETTIFICA_AVVISO='')"
-        '        sSQL += " AND (DATA_ANNULLAMENTO_AVVISO IS NULL OR DATA_ANNULLAMENTO_AVVISO='')"
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
-        '        '*** ***
-        '        If strAnno.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
-        '        End If
-        '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
-        '        End If
-        '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
-        '        End If
-        '        sSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_RETTIFICATO ricerca::" & sSQL)
-        '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = sSQL
-        '        objDA.SelectCommand = cmdMyCommand
-        '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_RETTIFICATO")
-        '        '**********************************FINE TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI*************************************
+                '*************************************TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI**********************************************
+                sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE"
+                sSQL += ", SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO"
+                sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+                sSQL += " WHERE (DATA_RETTIFICA_AVVISO IS NULL OR DATA_RETTIFICA_AVVISO='')"
+                sSQL += " AND (DATA_ANNULLAMENTO_AVVISO IS NULL OR DATA_ANNULLAMENTO_AVVISO='')"
+                '*** 201511 - Funzioni Sovracomunali ***
+                sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+                sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+                '*** ***
+                If strAnno.CompareTo("-1") <> 0 Then
+                    sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
+                End If
+                If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+                End If
+                If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+                End If
+                sSQL += strFilterData
+                Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_RETTIFICATO ricerca::" & sSQL)
+                cmdMyCommand.CommandType = CommandType.Text
+                cmdMyCommand.CommandText = sSQL
+                objDA.SelectCommand = cmdMyCommand
+                objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_RETTIFICATO")
+                '**********************************FINE TOTALE AL NETTO DELLE RETTIFICHE E DEGLI ANNULLAMENTI*************************************
 
-        '        '********************************** TOTALE *************************************
-        '        sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE, SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO "
-        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI "
-        '        sSQL += " LEFT JOIN TP_PROVVEDIMENTI_RETTIFICATI ON V_GET_RICERCAAVANZATAATTI.ID_PROVVEDIMENTO=TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO"
-        '        sSQL += " WHERE  (TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO IS NULL)"
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR V_GET_RICERCAAVANZATAATTI.COD_ENTE='" & strCOD_ENTE & "')"
-        '        '*** ***
-        '        If strAnno.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.ANNO =" & objUtility.CStrToDB(strAnno)
-        '        End If
-        '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
-        '        End If
-        '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
-        '        End If
-        '        sSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_GENERALE ricerca::" & sSQL)
-        '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = sSQL
-        '        objDA.SelectCommand = cmdMyCommand
-        '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_GENERALE")
-        '        '**********************************FINE TOTALE*************************************
+                '********************************** TOTALE *************************************
+                sSQL = "SELECT SUM(IMPORTO_TOTALE) AS IMPORTO_TOTALE, SUM(IMP_TOT_RIDOTTO) AS IMPORTO_TOTALE_RIDOTTO "
+                sSQL += " FROM V_GET_RICERCAAVANZATAATTI "
+                sSQL += " LEFT JOIN TP_PROVVEDIMENTI_RETTIFICATI ON V_GET_RICERCAAVANZATAATTI.ID_PROVVEDIMENTO=TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO"
+                sSQL += " WHERE  (TP_PROVVEDIMENTI_RETTIFICATI.ID_PROVVEDIMENTO_FIGLIO IS NULL)"
+                '*** 201511 - Funzioni Sovracomunali ***
+                sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+                sSQL += " AND ('" & strCOD_ENTE & "'='' OR V_GET_RICERCAAVANZATAATTI.COD_ENTE='" & strCOD_ENTE & "')"
+                '*** ***
+                If strAnno.CompareTo("-1") <> 0 Then
+                    sSQL += " AND V_GET_RICERCAAVANZATAATTI.ANNO =" & objUtility.CStrToDB(strAnno)
+                End If
+                If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+                End If
+                If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND V_GET_RICERCAAVANZATAATTI.COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+                End If
+                sSQL += strFilterData
+                Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_GENERALE ricerca::" & sSQL)
+                cmdMyCommand.CommandType = CommandType.Text
+                cmdMyCommand.CommandText = sSQL
+                objDA.SelectCommand = cmdMyCommand
+                objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_GENERALE")
+                '**********************************FINE TOTALE*************************************
 
-        '        '********************* TOTALE CONTRIBUENTI *************************
-        '        sSQL = "SELECT DISTINCT COD_CONTRIBUENTE"
-        '        sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
-        '        sSQL += " WHERE 1=1"
-        '        '*** 201511 - Funzioni Sovracomunali ***
-        '        sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
-        '        sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
-        '        '*** ***
-        '        If strAnno.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
-        '        End If
-        '        If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
-        '        End If
-        '        If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
-        '            sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
-        '        End If
-        '        sSQL += strFilterData
-        '        Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_CONTRIBUENTI ricerca::" & sSQL)
-        '        cmdMyCommand.CommandType = CommandType.Text
-        '        cmdMyCommand.CommandText = sSQL
-        '        objDA.SelectCommand = cmdMyCommand
-        '        objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_CONTRIBUENTI")
-        '        '********************* FINE TOTALE CONTRIBUENTI ********************
-        '        Return objDSAttiRicercaAvanzata
-        '    Catch Err As Exception
-        '        Log.Debug("DBOPENgovProvvedimentiSelect::GetDatiAttiRicercaAvanzata::si è verificato il seguente errore::", Err)
-        '        Return Nothing
-        '    Finally
-        '        cmdMyCommand.Dispose()
-        '    End Try
-        'End Function
+                '********************* TOTALE CONTRIBUENTI *************************
+                sSQL = "SELECT DISTINCT COD_CONTRIBUENTE"
+                sSQL += " FROM V_GET_RICERCAAVANZATAATTI"
+                sSQL += " WHERE 1=1"
+                '*** 201511 - Funzioni Sovracomunali ***
+                sSQL += " AND ('" & strAmbiente & "'='' OR AMBIENTE='" & strAmbiente & "')"
+                sSQL += " AND ('" & strCOD_ENTE & "'='' OR COD_ENTE='" & strCOD_ENTE & "')"
+                '*** ***
+                If strAnno.CompareTo("-1") <> 0 Then
+                    sSQL += " AND ANNO =" & objUtility.CStrToDB(strAnno)
+                End If
+                If strCOD_TRIBUTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND COD_TRIBUTO =" & objUtility.CStrToDB(strCOD_TRIBUTO)
+                End If
+                If strTIPOLOGIAATTO.CompareTo("-1") <> 0 Then
+                    sSQL += " AND COD_TIPO_PROVVEDIMENTO =" & strTIPOLOGIAATTO
+                End If
+                sSQL += strFilterData
+                Log.Debug("GetDatiAttiRicercaAvanzata::TP_TOTALE_CONTRIBUENTI ricerca::" & sSQL)
+                cmdMyCommand.CommandType = CommandType.Text
+                cmdMyCommand.CommandText = sSQL
+                objDA.SelectCommand = cmdMyCommand
+                objDA.Fill(objDSAttiRicercaAvanzata, "TP_TOTALE_CONTRIBUENTI")
+                '********************* FINE TOTALE CONTRIBUENTI ********************
+                Return objDSAttiRicercaAvanzata
+            Catch Err As Exception
+                Log.Debug("DBOPENgovProvvedimentiSelect::GetDatiAttiRicercaAvanzata::si è verificato il seguente errore::", Err)
+                Return Nothing
+            Finally
+                cmdMyCommand.Dispose()
+            End Try
+        End Function
 #End Region
 
 #Region "Gestione ACCERTAMENTI"
